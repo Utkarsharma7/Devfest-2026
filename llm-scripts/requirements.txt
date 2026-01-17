@@ -13,7 +13,10 @@ torch
 sentencepiece
 accelerate
 
-
+easyocr
+PyMuPDF
+pillow
+python-multipart
 
 # If you parse / clean text heavily
 numpy
