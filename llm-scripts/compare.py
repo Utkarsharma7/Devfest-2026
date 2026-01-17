@@ -94,21 +94,21 @@ Profile B (Candidate):
 
 
 # ---------------- Main execution ----------------
-if __name__ == "__main__":
-    # Load JSON profiles
-    with open("user.json", "r", encoding="utf-8") as f:
-        user_profile = json.load(f)
+# if __name__ == "__main__":
+#     # Load JSON profiles
+#     with open("user.json", "r", encoding="utf-8") as f:
+#         user_profile = json.load(f)
 
-    with open("candidate.json", "r", encoding="utf-8") as f:
-        candidate_profile = json.load(f)
+#     with open("candidate.json", "r", encoding="utf-8") as f:
+#         candidate_profile = json.load(f)
 
-    # Compare profiles
-    scores = compare_profiles(user_profile, candidate_profile)
+#     # Compare profiles
+#     scores = compare_profiles(user_profile, candidate_profile)
 
-    # Print final results
-    print("\n=== Comparison Scores ===")
-    if scores:
-        for k, v in scores.items():
-            print(f"{k}: {v}")
-    else:
-        print("No scores returned. Check LLaMA output formatting.")
+#     # Print final results
+#     print("\n=== Comparison Scores ===")
+#     if scores:
+#         for k, v in scores.items():
+#             print(f"{k}: {v}")
+#     else:
+#         print("No scores returned. Check LLaMA output formatting.")

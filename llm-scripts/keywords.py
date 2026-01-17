@@ -70,10 +70,10 @@ Do not include explanations, numbering, or extra text.
     return keywords
 
 
-if __name__ == "__main__":
-    # Load JSON profiles
-    with open("candidate.json", "r", encoding="utf-8") as f:
-        user_profile = json.load(f)
+# if __name__ == "__main__":
+#     # Load JSON profiles
+#     with open("candidate.json", "r", encoding="utf-8") as f:
+#         user_profile = json.load(f)
 
-    keywords = keywords_from_profile(user_profile)
-    print("Extracted keywords:", keywords)
+#     keywords = keywords_from_profile(user_profile)
+#     print("Extracted keywords:", keywords)

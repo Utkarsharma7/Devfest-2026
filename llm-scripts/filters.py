@@ -77,12 +77,12 @@ Return JSON in this exact structure:
     return keywords
 
 
-if __name__ == "__main__":
-    # Load JSON profiles
-    with open("candidate.json", "r", encoding="utf-8") as f:
-        user_profile = json.load(f)
+# if __name__ == "__main__":
+#     # Load JSON profiles
+#     with open("candidate.json", "r", encoding="utf-8") as f:
+#         user_profile = json.load(f)
 
-    with open("filter.json", "r", encoding="utf-8") as f:
-        filter_options = json.load(f)
-    filters = filters(user_profile, filter_options)
-    print("Extracted keywords:", filters)
+#     with open("filter.json", "r", encoding="utf-8") as f:
+#         filter_options = json.load(f)
+#     filters = filters(user_profile, filter_options)
+#     print("Extracted keywords:", filters)
