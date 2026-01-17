@@ -1,0 +1,41 @@
+{
+  "Locations": [
+    "India",
+    "Delhi, India",
+    "Goa, India",
+    "Ahmedabad, Gujarat, India"
+  ],
+  "Current company": [
+    "Developers' Society, BITS Goa",
+    "BITSkrieg",
+    "Birla Institute of Technology and Science, Pilani - Goa Campus"
+  ],
+  "Past company": [
+    "Developers' Society, BITS Goa",
+    "BITSkrieg"
+  ],
+  "School": [
+    "Birla Institute of Technology and Science, Pilani - Goa Campus",
+    "Rukmini Devi Public School"
+  ],
+  "Industry": [
+    "Software Development",
+    "Computer Science",
+    "Cybersecurity",
+    "Web Development",
+    "Machine Learning"
+  ],
+  "Profile language": [
+    "English"
+  ],
+  "Open to": [
+    "Volunteering",
+    "Internships",
+    "Collaborations"
+  ],
+  "Service categories": [
+    "Web Development",
+    "Machine Learning",
+    "Ethical Hacking"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "linkedin_url": "https://www.linkedin.com/in/sarthak-guptatsg/",
+  "name": "Sarthak Gupta",
+  "location": "Delhi, India",
+  "about": "I’m a first-year Computer Science Engineering student at BITS Goa, interested in web development , competitive programming and AI/ML. I’m excited to learn and grow through my studies and campus activities. I’m looking for opportunities to help me build my skills. Feel free to connect if you have any opportunities or want to discuss anything!",
+  "open_to_work": false,
+  "experiences": [
+    {
+      "position_title": "Crew Member",
+      "institution_name": "BITSkrieg · Trainee",
+      "linkedin_url": "https://www.linkedin.com/company/14435628/",
+      "from_date": "Sep 2024",
+      "to_date": "Present",
+      "duration": "1 yr 5 mos",
+      "location": "Goa, India · On-site",
+      "description": "Skills: C (Programming Language) · C++ · JavaScript · Hypertext Transfer Protocol (HTTP) · x86 Assembly · Ethical Hacking · Reverse Engineering\nSkills: C (Programming Language) · C++ · JavaScript · Hypertext Transfer Protocol (HTTP) · x86 Assembly · Ethical Hacking · Reverse Engineering"
+    },
+    {
+      "position_title": "Junior developer",
+      "institution_name": "Developers' Society, BITS Goa · Trainee",
+      "linkedin_url": "https://www.linkedin.com/company/13598216/",
+      "from_date": "Sep 2024",
+      "to_date": "Present",
+      "duration": "1 yr 5 mos",
+      "location": "Goa, India · On-site",
+      "description": "Skills: HTML · Cascading Style Sheets (CSS) · JavaScript · Project Management\nSkills: HTML · Cascading Style Sheets (CSS) · JavaScript · Project Management"
+    }
+  ],
+  "educations": [
+    {
+      "institution_name": "Birla Institute of Technology and Science, Pilani - Goa Campus",
+      "degree": "Bachelor of Engineering - BE, Computer Science",
+      "linkedin_url": "https://www.linkedin.com/company/1134790/",
+      "from_date": "2024",
+      "to_date": "2028",
+      "description": null
+    },
+    {
+      "institution_name": "Rukmini Devi Public School",
+      "degree": null,
+      "linkedin_url": "https://www.linkedin.com/company/2976241/",
+      "from_date": "Feb 2011",
+      "to_date": "Apr 2024",
+      "description": null
+    }
+  ],
+  "interests": [],
+  "accomplishments": [],
+  "contacts": []
+}
