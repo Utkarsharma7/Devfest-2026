@@ -4,6 +4,8 @@ import { NoiseBackground } from "@/components/ui/noise-background";
 import { StickyScroll } from "@/components/ui/sticky-scroll-reveal";
 import { TypewriterEffect } from "@/components/ui/typewriter-effect";
 import { useRouter } from "next/navigation";
+import TextType from "@/components/ui/TextType";
+import Divider from "@/components/Divider";
 
 export default function Home() {
   const router = useRouter();
@@ -46,25 +48,49 @@ export default function Home() {
               </p>
               <div className="flex justify-center mt-8">
                 <div className="inline-block">
-                  <NoiseBackground className="px-16 py-3">
                     <button 
                       onClick={() => router.push('/auth')}
-                      className="text-lg md:text-xl font-semibold text-white cursor-pointer whitespace-nowrap transition-all duration-300 hover:scale-105 hover:drop-shadow-lg hover:drop-shadow-purple-500/50 active:scale-95 transform"
+                      className="text-lg md:text-xl rounded-xl font-semibold text-white cursor-pointer whitespace-nowrap transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/50 active:scale-95 transform"
                     >
+                  <NoiseBackground className="px-16 py-3">
                       Sign In
-                    </button>
                   </NoiseBackground>
+                    </button>
                 </div>
               </div>
             </div>
           </div>
         </BackgroundBeamsWithCollision>
       </div>
+      <Divider />
+      <div className="w-screen">
+
+      </div>
       
-      <div className="w-full bg-neutral-950 pt-20 pb-20">
-        <div className="container mx-auto px-4">
+      <div className="w-full bg-neutral-950 flex justify-around items-center h-screen px-6">
+        <div>
           <StickyScroll content={content} />
         </div>
+        <div className="hidden lg:flex items-center justify-center flex-shrink-0" style={{ minWidth: '700px', maxWidth: '700px' }}>
+        <TextType
+          text={[
+            "Connections, perfectly timed.",
+            "Network like you mean it.",
+            "Context finds your next connect.",
+            "From signals to introductions.",
+            "Stop guessing. Start connecting.",
+            "Your smartest next message.",
+            "Connect with purpose, instantly.",
+            "Timing beats networking.",
+            "Find your next \"yes.\"",
+          ]}
+          typingSpeed={30}
+          pauseDuration={1500}
+          showCursor={true}
+          cursorCharacter="|"
+          className="text-5xl lg:text-6xl xl:text-7xl font-bold w-full text-center"
+        />
+      </div>
       </div>
     </div>
   );
