@@ -44,14 +44,18 @@ export default function Home() {
               <p className="text-2xl md:text-3xl font-semibold text-neutral-300 mt-8 mb-8">
                 Connect smarter. Right time. Right reason.
               </p>
-              <NoiseBackground className="px-6 py-3">
-                <button 
-                  onClick={() => router.push('/auth')}
-                  className="text-base font-semibold text-white cursor-pointer"
-                >
-                  Sign In
-                </button>
-              </NoiseBackground>
+              <div className="flex justify-center mt-8">
+                <div className="inline-block">
+                  <NoiseBackground className="px-16 py-3">
+                    <button 
+                      onClick={() => router.push('/auth')}
+                      className="text-lg md:text-xl font-semibold text-white cursor-pointer whitespace-nowrap transition-all duration-300 hover:scale-105 hover:drop-shadow-lg hover:drop-shadow-purple-500/50 active:scale-95 transform"
+                    >
+                      Sign In
+                    </button>
+                  </NoiseBackground>
+                </div>
+              </div>
             </div>
           </div>
         </BackgroundBeamsWithCollision>

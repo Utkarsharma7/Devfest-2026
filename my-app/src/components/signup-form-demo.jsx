@@ -9,21 +9,70 @@ import {
   IconBrandGoogle,
 } from "@tabler/icons-react";
 import { signInWithGoogle } from "@/lib/firebase/auth";
+import { createOrUpdateUser } from "@/lib/firebase/firestore";
+import { auth } from "@/lib/firebase/config";
 
 export default function SignupFormDemo() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    firstname: "",
+    lastname: "",
+    email: "",
+    password: ""
+  });
 
-  const handleSubmit = (e) => {
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted");
+    setLoading(true);
+    try {
+      // For form signup, we'll create a user account
+      // Note: You'll need to implement email/password auth separately
+      // For now, this is just saving the form data
+      // In a real app, you'd use createUserWithEmailAndPassword first
+      console.log("Form submitted", formData);
+      
+      // If user is already authenticated (e.g., via Google), save their data
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        await createOrUpdateUser(currentUser.uid, {
+          name: `${formData.firstname} ${formData.lastname}`.trim(),
+          firstName: formData.firstname,
+          lastName: formData.lastname,
+          email: formData.email,
+        });
+        router.push("/home");
+      } else {
+        // In a real implementation, create auth account first, then save to Firestore
+        console.log("User not authenticated. Please sign in first.");
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleSignIn = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await signInWithGoogle();
+      const user = await signInWithGoogle();
+      
+      // Save user data to Firestore
+      if (user) {
+        await createOrUpdateUser(user.uid, {
+          name: user.displayName || "",
+          email: user.email || "",
+          photoURL: user.photoURL || "",
+        });
+      }
+      
       router.push("/home");
     } catch (error) {
       console.error("Sign in error:", error);
@@ -41,26 +90,51 @@ export default function SignupFormDemo() {
           className="mb-4 flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
           <LabelInputContainer>
             <Label htmlFor="firstname" className="text-white">First name</Label>
-            <Input id="firstname" placeholder="Tyler" type="text" />
+            <Input 
+              id="firstname" 
+              placeholder="Tyler" 
+              type="text" 
+              value={formData.firstname}
+              onChange={handleInputChange}
+            />
           </LabelInputContainer>
           <LabelInputContainer>
             <Label htmlFor="lastname" className="text-white">Last name</Label>
-            <Input id="lastname" placeholder="Durden" type="text" />
+            <Input 
+              id="lastname" 
+              placeholder="Durden" 
+              type="text" 
+              value={formData.lastname}
+              onChange={handleInputChange}
+            />
           </LabelInputContainer>
         </div>
         <LabelInputContainer className="mb-4">
           <Label htmlFor="email" className="text-white">Email Address</Label>
-          <Input id="email" placeholder="projectmayhem@fc.com" type="email" />
+          <Input 
+            id="email" 
+            placeholder="projectmayhem@fc.com" 
+            type="email" 
+            value={formData.email}
+            onChange={handleInputChange}
+          />
         </LabelInputContainer>
         <LabelInputContainer className="mb-4">
           <Label htmlFor="password" className="text-white">Password</Label>
-          <Input id="password" placeholder="••••••••" type="password" />
+          <Input 
+            id="password" 
+            placeholder="••••••••" 
+            type="password" 
+            value={formData.password}
+            onChange={handleInputChange}
+          />
         </LabelInputContainer>
 
         <button
-          className="group/btn relative block h-10 w-full rounded-md bg-gradient-to-br from-black to-neutral-600 font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:bg-zinc-800 dark:from-zinc-900 dark:to-zinc-900 dark:shadow-[0px_1px_0px_0px_#27272a_inset,0px_-1px_0px_0px_#27272a_inset]"
-          type="submit">
-          Sign up &rarr;
+          className="group/btn relative block h-10 w-full rounded-md bg-gradient-to-br from-black to-neutral-600 font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:bg-zinc-800 dark:from-zinc-900 dark:to-zinc-900 dark:shadow-[0px_1px_0px_0px_#27272a_inset,0px_-1px_0px_0px_#27272a_inset] disabled:opacity-50 disabled:cursor-not-allowed"
+          type="submit"
+          disabled={loading}>
+          {loading ? "Processing..." : "Sign up &rarr;"}
           <BottomGradient />
         </button>
 
