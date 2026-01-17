@@ -3,6 +3,7 @@ import React, { useRef } from "react";
 import { useMotionValueEvent, useScroll } from "motion/react";
 import { motion } from "motion/react";
 import { TypewriterEffect } from "./typewriter-effect";
+import TextType from "./TextType";
 
 export const StickyScroll = ({
   content,
@@ -37,7 +38,7 @@ export const StickyScroll = ({
 
   return (
     <motion.div
-      className="relative flex h-[30rem] justify-center gap-10 overflow-y-auto rounded-md p-10 bg-neutral-950"
+      className="relative flex h-[30rem] justify-center gap-10 overflow-y-auto rounded-md px-10 bg-neutral-950"
       ref={ref}>
       <div className="div relative flex items-start px-4 flex-shrink-0" style={{ minWidth: '500px', maxWidth: '500px' }}>
         <div className="w-full">
@@ -68,11 +69,7 @@ export const StickyScroll = ({
           <div className="h-40" />
         </div>
       </div>
-      <div className="sticky top-10 hidden lg:flex items-center justify-center flex-shrink-0" style={{ minWidth: '600px', maxWidth: '600px' }}>
-        <TypewriterEffect
-          className="text-5xl lg:text-6xl xl:text-7xl font-bold w-full"
-        />
-      </div>
+      
     </motion.div>
   );
 };
