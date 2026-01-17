@@ -68,10 +68,10 @@ Scoring rules (scores must be between 0 and 100):
   of Profile B **for Profile A**.
 
 Profile A (User):
-{user_json}
+{user_text}
 
 Profile B (Candidate):
-{candidate_json}
+{candidate_text}
 
 
 
