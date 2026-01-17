@@ -1,0 +1,20 @@
+fastapi
+uvicorn[standard]
+
+pydantic
+python-dotenv
+
+requests
+httpx
+
+transformers
+torch
+
+sentencepiece
+accelerate
+
+
+
+# If you parse / clean text heavily
+numpy
+scikit-learn
