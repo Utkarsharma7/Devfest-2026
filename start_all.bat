@@ -15,7 +15,7 @@ echo   Done!
 timeout /t 2 /nobreak >nul
 
 echo [2/6] Starting Ollama in WSL background...
-start "Ollama WSL" cmd /k "wsl bash -c \"ollama serve\""
+start "Ollama WSL" wsl ollama serve
 timeout /t 5 /nobreak >nul
 
 echo [3/6] Starting LLM Scripts Server on port 8001...
