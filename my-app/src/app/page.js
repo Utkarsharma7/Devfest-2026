@@ -6,6 +6,7 @@ import { TypewriterEffect } from "@/components/ui/typewriter-effect";
 import { useRouter } from "next/navigation";
 import TextType from "@/components/ui/TextType";
 import Divider from "@/components/Divider";
+import { motion } from "motion/react";
 
 export default function Home() {
   const router = useRouter();
@@ -35,14 +36,14 @@ export default function Home() {
         <BackgroundBeamsWithCollision className="h-screen min-h-screen w-full bg-neutral-950">
           <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 h-full">
             <div className="text-white font-sans">
-              <h1 className="text-5xl md:text-7xl font-bold mb-2 leading-tight">
-                What's cooler than
-                <br />
-                Beams?
-              </h1>
-              <h2 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 bg-clip-text text-transparent mb-8">
-                Exploding beams.
-              </h2>
+              <motion.h2 
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 bg-clip-text text-transparent mb-8"
+              >
+                Know who to connect.
+              </motion.h2>
               <p className="text-2xl md:text-3xl font-semibold text-neutral-300 mt-8 mb-8">
                 Connect smarter. Right time. Right reason.
               </p>

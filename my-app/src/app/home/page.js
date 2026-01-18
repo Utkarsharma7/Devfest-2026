@@ -380,9 +380,10 @@ export default function Dashboard() {
 
               // Only merge if we have LinkedIn results (check it's defined and is an array)
               if (linkedinPeopleAsync && Array.isArray(linkedinPeopleAsync) && linkedinPeopleAsync.length > 0) {
-                // Append 10 LinkedIn results to the existing 20 GitHub results (total 30 cards)
+                // Append LinkedIn results to the existing GitHub results
                 const linkedinWithSource = linkedinPeopleAsync.map(p => ({ ...p, source: 'linkedin' }));
-                const topLinkedin = linkedinWithSource.slice(0, 10); // Take top 10 LinkedIn
+                // Use all LinkedIn results (no limit, or set a higher limit if needed)
+                const topLinkedin = linkedinWithSource; // Use all LinkedIn results
                 
                 // Merge: Keep all 20 GitHub + append 10 LinkedIn (total 30 cards)
                 const finalPeople = [
@@ -709,7 +710,7 @@ export default function Dashboard() {
           ) : (
             <div className="flex flex-col lg:flex-row gap-6 items-center justify-center">
               <div className="flex flex-col gap-4">
-                <h2 className="text-3xl font-bold mb-2 text-center lg:text-left">
+                <h2 className="text-3xl font-bold mb-2 text-center lg:text-left min-h-[60px] flex items-center">
                   <EncryptedText
                     text="Intro Questions"
                     revealDelayMs={50}
@@ -720,7 +721,7 @@ export default function Dashboard() {
                   />
                 </h2>
                 <CardContainer className="inter-var flex-shrink-0">
-                  <CardBody className="bg-neutral-800 relative group/card dark:hover:shadow-2xl dark:hover:shadow-purple-500/[0.1] dark:bg-neutral-800 dark:border-white/[0.2] border-neutral-700 w-full sm:w-[40rem] h-auto rounded-xl p-8 border shadow-lg shadow-black/50">
+                  <CardBody className="bg-neutral-800 relative group/card dark:hover:shadow-2xl dark:hover:shadow-purple-500/[0.1] dark:bg-neutral-800 dark:border-white/[0.2] border-neutral-700 w-full sm:w-[40rem] min-h-[600px] rounded-xl p-8 border shadow-lg shadow-black/50">
                     <CardItem
                       translateZ="50"
                       className="text-2xl font-bold text-white mb-6"
@@ -731,14 +732,16 @@ export default function Dashboard() {
                       translateZ="60"
                       className="text-neutral-300 mb-8 text-2xl"
                     >
-                      <EncryptedText
-                        text={questions[currentQuestionIndex]}
-                        revealDelayMs={50}
-                        flipDelayMs={50}
-                        encryptedClassName="text-purple-400"
-                        revealedClassName="text-neutral-300"
-                        className="inline-block"
-                      />
+                      <div className="min-h-[100px] w-full">
+                        <EncryptedText
+                          text={questions[currentQuestionIndex]}
+                          revealDelayMs={50}
+                          flipDelayMs={50}
+                          encryptedClassName="text-purple-400"
+                          revealedClassName="text-neutral-300"
+                          className="inline-block"
+                        />
+                      </div>
                     </CardItem>
                     <form onSubmit={handleQuestionSubmit}>
                       <CardItem translateZ="40" className="mb-6">
@@ -765,7 +768,7 @@ export default function Dashboard() {
                             onChange={(e) => handleAnswerChange(e.target.value)}
                             placeholder="Type your answer here..."
                             className="w-full px-4 py-3 rounded-lg bg-neutral-900 border border-neutral-700 text-white placeholder-neutral-500 focus:outline-none focus:border-purple-500 resize-none"
-                            rows="5"
+                            rows="10"
                             required
                           />
                         )}

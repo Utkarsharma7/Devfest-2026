@@ -222,8 +222,8 @@ async def scrape_people_logic(keyword: str, filters: Dict[str, List[str]]):
                 print(f"Warning: Error applying filters (continuing without filters): {filter_error}")
                 # Continue scraping without filters if filter application fails
         
-        # Scrape
-        results = await scraper.scrape(url, max_scrolls=5)
+        # Scrape (increased max_scrolls to get more results)
+        results = await scraper.scrape(url, max_scrolls=10)
         
         # Convert to dict
         return json.loads(results.to_json())
