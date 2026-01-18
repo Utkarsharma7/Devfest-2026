@@ -1,5 +1,9 @@
 {
   "dependencies": {
-    "firebase": "^12.8.0"
+    "firebase": "^12.8.0",
+    "gsap": "^3.14.2"
+  },
+  "devDependencies": {
+    "daisyui": "^5.5.14"
   }
 }

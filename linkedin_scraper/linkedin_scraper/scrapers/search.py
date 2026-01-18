@@ -177,7 +177,15 @@ class SearchScraper(BaseScraper):
                         
                         is_checked = False
                         if await input_el.count():
-                            is_checked = await input_el.is_checked()
+                            try:
+                                # Only check if it's actually a checkbox or radio button
+                                input_type = await input_el.get_attribute('type')
+                                if input_type in ['checkbox', 'radio']:
+                                    is_checked = await input_el.is_checked()
+                            except Exception as check_error:
+                                # If checking fails, assume not checked and proceed with click
+                                logger.debug(f"Could not check input state: {check_error}")
+                                is_checked = False
                         
                         if not is_checked:
                             await label.click()

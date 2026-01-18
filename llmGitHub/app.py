@@ -43,17 +43,55 @@ def home():
     return {"message": "GitHub Matcher API is Running 🚀"}
 
 
-@app.get("/match/{username}", response_model=MatchResponse)
+@app.get("/match/{username}")
 def get_matches(username: str):
     """
     Main endpoint. Calls the orchestrator in matcher.py
     """
-    result = find_profiles_for_me(username)
+    try:
+        print(f"[GITHUB API] Received request for username: {username}")
+        result = find_profiles_for_me(username)
+        print(f"[GITHUB API] Result status: {result.get('status')}, matches count: {len(result.get('matches', []))}")
 
-    if "error" in result:
-        raise HTTPException(status_code=404, detail=result["error"])
+        if "error" in result:
+            print(f"[GITHUB API] Error in result: {result['error']}")
+            raise HTTPException(status_code=404, detail=result["error"])
 
-    return result
+        # Transform result to match expected format
+        matches = result.get("matches", [])
+        transformed_matches = []
+        for idx, match in enumerate(matches, start=1):
+            transformed_matches.append({
+                "rank": idx,
+                "username": match.get("username", ""),
+                "name": match.get("name", match.get("username", "")),
+                "url": match.get("url", ""),
+                "avatar_url": match.get("avatar_url"),
+                "score": match.get("score", 0),
+                "reason": match.get("reason", ""),
+                "pitch": match.get("pitch", "")
+            })
 
+        # Return transformed response (we'll extract keywords from the function if needed)
+        # For now, use empty keywords - the frontend doesn't need them
+        return {
+            "status": result.get("status", "success"),
+            "analyzed_user": username,
+            "keywords": [],  # Keywords are not needed for frontend display
+            "matches": transformed_matches
+        }
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 404)
+        raise
+    except Exception as e:
+        print(f"[GITHUB API] Internal error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8002)
 
 # Run with: uvicorn app:app --reload

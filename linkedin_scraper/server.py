@@ -172,8 +172,13 @@ async def scrape_filters_logic(keyword: str):
         
         await scraper.navigate_and_wait(url)
         await scraper.wait_and_focus(3)
-        await scraper.ensure_logged_in()
         
+        try:
+            await scraper.ensure_logged_in()
+        except Exception as auth_error:
+            print(f"Authentication error: {auth_error}")
+            return {"error": f"Not logged in to LinkedIn. Please create a session by running 'python samples/create_session.py'"}
+
         filters = await scraper.get_all_filters()
         return filters
 
@@ -195,21 +200,48 @@ async def scrape_people_logic(keyword: str, filters: Dict[str, List[str]]):
         
         await scraper.navigate_and_wait(url)
         await scraper.wait_and_focus(3)
-        await scraper.ensure_logged_in()
         
-        # Apply Filters if provided
-        has_filters = any(options for options in filters.values()) if filters else False
+        try:
+            await scraper.ensure_logged_in()
+        except Exception as auth_error:
+            print(f"Authentication error: {auth_error}")
+            return {"error": f"Not logged in to LinkedIn. Please create a session by running 'python samples/create_session.py'", "results": []}
+        
+        # Apply Filters if provided (check if filters dict is non-empty and has actual options)
+        has_filters = filters and isinstance(filters, dict) and any(
+            options and isinstance(options, list) and len(options) > 0 
+            for options in filters.values()
+        )
         
         if has_filters:
-            print(f"Applying filters: {filters}")
-            await scraper.apply_search_filters(filters)
-            url = browser.page.url
+            try:
+                print(f"Applying filters: {filters}")
+                await scraper.apply_search_filters(filters)
+                url = browser.page.url
+            except Exception as filter_error:
+                print(f"Warning: Error applying filters (continuing without filters): {filter_error}")
+                # Continue scraping without filters if filter application fails
         
         # Scrape
         results = await scraper.scrape(url, max_scrolls=5)
         
         # Convert to dict
         return json.loads(results.to_json())
+
+@app.get("/")
+def root():
+    """Root endpoint - shows server status and available endpoints"""
+    return {
+        "status": "running",
+        "message": "LinkedIn Scraper API is running",
+        "endpoints": {
+            "filter": "GET /filter?keyword=<keyword> - Get available filters for people search",
+            "people": "POST /people - Scrape people profiles with keyword and filters",
+            "job": "GET /job?keyword=<keyword>&location=<location> - Scrape job listings",
+            "docs": "GET /docs - Interactive API documentation"
+        },
+        "server": "http://localhost:8000"
+    }
 
 @app.get("/filter")
 @app.get("/filter/")
@@ -234,6 +266,22 @@ async def get_people(keyword: str, request: Request):
         filters = {}
 
     return await scrape_people_logic(keyword, filters)
+
+@app.post("/people")
+@app.post("/people/")
+async def post_people(request: Request):
+    """POST endpoint for /people with keyword and filters in body"""
+    try:
+        body = await request.json()
+        keyword = body.get("keyword", "")
+        filters = body.get("filters", {})
+        
+        if not keyword:
+            return {"error": "keyword is required in request body"}
+        
+        return await scrape_people_logic(keyword, filters)
+    except Exception as e:
+        return {"error": f"Invalid request: {str(e)}"}
 
 @app.get("/job")
 @app.get("/job/")

@@ -11,19 +11,48 @@ export default function ThreeScene() {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
   const animationIdRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
+    
     if (!containerRef.current) return;
+    
+    // Check if WebGL is supported
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) {
+      console.error('WebGL is not supported in this browser');
+      if (containerRef.current && isMountedRef.current) {
+        containerRef.current.innerHTML = '<div class="text-white text-center p-4">WebGL is not supported in this browser</div>';
+      }
+      return;
+    }
     
     // Ensure container has dimensions
     if (containerRef.current.clientWidth === 0 || containerRef.current.clientHeight === 0) {
       console.warn('Container has zero dimensions, waiting...');
+      // Retry after a short delay
+      const timeoutId = setTimeout(() => {
+        if (isMountedRef.current && containerRef.current) {
+          // Trigger re-render by updating state or re-running effect
+          window.dispatchEvent(new Event('resize'));
+        }
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }
+
+    // Prevent multiple initializations
+    if (sceneRef.current) {
       return;
     }
 
     const initThreeScene = async () => {
+      if (!isMountedRef.current || !containerRef.current) return;
       // Dynamically import BufferGeometryUtils to avoid build-time errors
       const BufferGeometryUtils = await import("three/addons/utils/BufferGeometryUtils.js");
+      
+      if (!isMountedRef.current || !containerRef.current) return;
       
       // Try to get mergeBufferGeometries function - check various possible names
       const mergeBufferGeometries = BufferGeometryUtils.mergeBufferGeometries || 
@@ -309,6 +338,8 @@ export default function ThreeScene() {
         off: 0x000000 // Keep black for bloom render
       }
 
+      if (!isMountedRef.current || !containerRef.current) return;
+      
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(bgColors.off);
       
@@ -317,13 +348,60 @@ export default function ThreeScene() {
       
       const camera = new THREE.PerspectiveCamera(45, width / height, 1, 1000);
       camera.position.set(-5, 5, 10).setLength(18);
-      const renderer = new THREE.WebGLRenderer({ antialias: false });
+      
+      if (!isMountedRef.current || !containerRef.current) return;
+      
+      // Create renderer with error handling
+      let renderer;
+      try {
+        renderer = new THREE.WebGLRenderer({ 
+          antialias: false,
+          powerPreference: "high-performance",
+          preserveDrawingBuffer: false,
+          failIfMajorPerformanceCaveat: false
+        });
+      } catch (error) {
+        console.error('Failed to create WebGL renderer:', error);
+        if (isMountedRef.current && containerRef.current) {
+          containerRef.current.innerHTML = '<div class="text-white text-center p-4">Failed to initialize 3D scene. Please refresh the page.</div>';
+        }
+        return;
+      }
+      
+      if (!isMountedRef.current || !containerRef.current) return;
+      
+      // Check if renderer context is valid
+      const glContext = renderer.getContext();
+      if (!glContext) {
+        console.error('WebGL context could not be created');
+        if (isMountedRef.current && containerRef.current) {
+          containerRef.current.innerHTML = '<div class="text-white text-center p-4">WebGL context could not be created. Please refresh the page.</div>';
+        }
+        renderer.dispose();
+        return;
+      }
+      
+      // Check for context loss
+      glContext.canvas.addEventListener('webglcontextlost', (event) => {
+        event.preventDefault();
+        console.warn('WebGL context lost');
+      }, false);
+      
+      glContext.canvas.addEventListener('webglcontextrestored', () => {
+        console.log('WebGL context restored');
+      }, false);
+      
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.setSize(width, height);
       renderer.domElement.style.width = '100%';
       renderer.domElement.style.height = '100%';
-      containerRef.current.appendChild(renderer.domElement);
+      
+      // Clear container before appending
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+        containerRef.current.appendChild(renderer.domElement);
+      }
 
       const handleResize = () => {
         if (!containerRef.current) return;
@@ -398,24 +476,79 @@ export default function ThreeScene() {
       animate();
     };
 
-    initThreeScene().catch(err => console.error('Error initializing Three.js scene:', err));
+    initThreeScene().catch(err => {
+      if (isMountedRef.current) {
+        console.error('Error initializing Three.js scene:', err);
+        if (containerRef.current) {
+          containerRef.current.innerHTML = '<div class="text-white text-center p-4">Error initializing 3D scene. Please refresh the page.</div>';
+        }
+      }
+    });
 
     return () => {
+      isMountedRef.current = false;
+      // Cancel animation frame
+      if (animationIdRef.current) {
+        cancelAnimationFrame(animationIdRef.current);
+        animationIdRef.current = null;
+      }
+      
+      // Remove resize listener
       if (sceneRef.current && sceneRef.current.handleResize) {
         window.removeEventListener("resize", sceneRef.current.handleResize);
       }
-      if (animationIdRef.current) {
-        cancelAnimationFrame(animationIdRef.current);
+      
+      // Dispose Three.js resources
+      if (sceneRef.current) {
+        // Dispose controls
+        if (sceneRef.current.controls) {
+          sceneRef.current.controls.dispose();
+        }
+        
+        // Dispose postprocessing
+        if (sceneRef.current.postprocessing) {
+          if (sceneRef.current.postprocessing.bloomComposer) {
+            sceneRef.current.postprocessing.bloomComposer.dispose();
+          }
+          if (sceneRef.current.postprocessing.finalComposer) {
+            sceneRef.current.postprocessing.finalComposer.dispose();
+          }
+        }
+        
+        // Dispose scene objects
+        if (sceneRef.current.scene) {
+          sceneRef.current.scene.traverse((object) => {
+            if (object.geometry) object.geometry.dispose();
+            if (object.material) {
+              if (Array.isArray(object.material)) {
+                object.material.forEach((mat) => mat.dispose());
+              } else {
+                object.material.dispose();
+              }
+            }
+          });
+        }
+        
+        // Dispose renderer (this also disposes the WebGL context)
+        if (sceneRef.current.renderer) {
+          const gl = sceneRef.current.renderer.getContext();
+          if (gl) {
+            const loseContext = gl.getExtension('WEBGL_lose_context');
+            if (loseContext) {
+              loseContext.loseContext();
+            }
+          }
+          sceneRef.current.renderer.dispose();
+        }
       }
-      if (containerRef.current && containerRef.current.firstChild) {
-        containerRef.current.removeChild(containerRef.current.firstChild);
+      
+      // Clear container
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
       }
-      if (sceneRef.current && sceneRef.current.controls) {
-        sceneRef.current.controls.dispose();
-      }
-      if (sceneRef.current && sceneRef.current.renderer) {
-        sceneRef.current.renderer.dispose();
-      }
+      
+      // Clear scene reference
+      sceneRef.current = null;
     };
   }, []);
 

@@ -26,6 +26,7 @@ def get_profile_data(username: str) -> dict:
                 "company": data.get("company"),
                 "followers": data.get("followers"),
                 "html_url": data.get("html_url"),
+                "avatar_url": data.get("avatar_url"),  # GitHub profile picture
             }
         return {}
     except:
@@ -61,10 +62,12 @@ def get_activity_data(username: str) -> list:
         return []
 
 
-def search_users(query: str, limit: int = 5) -> list:
+def search_users(query: str, limit: int = 5, sort: str = "repositories", page: int = 1) -> list:
     """Searches for users and returns a list of usernames."""
     url = "https://api.github.com/search/users"
-    params = {"q": query, "per_page": limit, "sort": "repositories"}
+    # GitHub API allows up to 100 results per page, max 1000 total results
+    per_page = min(limit, 100)
+    params = {"q": query, "per_page": per_page, "sort": sort, "page": page}
     try:
         resp = requests.get(url, headers=headers, params=params)
         if resp.status_code == 200:

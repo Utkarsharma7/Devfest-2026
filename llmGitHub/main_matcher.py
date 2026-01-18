@@ -47,18 +47,35 @@ def llm_generate_keywords(user_profile, user_activity):
         end = content.rfind("]") + 1
 
         if start != -1 and end != -1:
-            return json.loads(content[start:end])
+            keywords = json.loads(content[start:end])
+            if isinstance(keywords, list) and len(keywords) > 0:
+                return keywords
+            else:
+                print(f"   ⚠️ Parsed empty keywords list from LLM")
         else:
             # Fallback Parsing
-            data = json.loads(content)
-            if isinstance(data, dict):
-                for val in data.values():
-                    if isinstance(val, list):
-                        return val
-            return []
+            try:
+                data = json.loads(content)
+                if isinstance(data, dict):
+                    for val in data.values():
+                        if isinstance(val, list) and len(val) > 0:
+                            return val
+            except:
+                pass
+            print(f"   ⚠️ Could not parse JSON from LLM response: {content[:100]}...")
+
+        # If we got here, parsing failed - use fallback
+        print(f"   ⚠️ Using fallback keywords")
+        bio_keywords = []
+        if user_profile.get("bio"):
+            words = user_profile["bio"].split()
+            bio_keywords = [w for w in words if len(w) > 4][:2]
+        return bio_keywords if bio_keywords else ["developer", "python"]
 
     except Exception as e:
         print(f"   ⚠️ Keyword Gen Failed: {e}")
+        import traceback
+        traceback.print_exc()
         # Robust Fallback based on profile bio if LLM fails
         bio_keywords = []
         if user_profile.get("bio"):
@@ -156,19 +173,39 @@ def find_profiles_for_me(my_username):
     keywords = llm_generate_keywords(my_profile, my_activity)
     print(f"   ...Keywords generated: {keywords}")
 
-    # 3. Search GitHub (Python Logic)
+    # 3. Search GitHub (Python Logic) - Multiple searches to get more results
     candidate_usernames = set()
+    
+    # Search with each keyword using different sorting and pages to get more diverse results
     for query in keywords:
         print(f"   ...Searching GitHub for: '{query}'")
-        users = search_users(query, limit=4)  # Increased limit slightly
-        candidate_usernames.update(users)
+        # Search by repositories (most active) - page 1
+        users1 = search_users(query, limit=30, sort="repositories", page=1)
+        candidate_usernames.update(users1)
+        
+        # Search by repositories - page 2 (if we need more)
+        if len(candidate_usernames) < 20:
+            users1b = search_users(query, limit=30, sort="repositories", page=2)
+            candidate_usernames.update(users1b)
+        
+        # Search by followers (most popular)
+        users2 = search_users(query, limit=30, sort="followers", page=1)
+        candidate_usernames.update(users2)
+        
+        # Also search with "language:" prefix for more specific results
+        if len(query) > 2:  # Only if keyword is substantial
+            lang_query = f"language:{query}"
+            users3 = search_users(lang_query, limit=20, sort="repositories", page=1)
+            candidate_usernames.update(users3)
 
     candidate_usernames.discard(my_username)
 
-    # LIMIT TO 10 CANDIDATES MAX
-    final_list = list(candidate_usernames)[:10]
+    print(f"   ...Total unique candidates found: {len(candidate_usernames)}")
+
+    # LIMIT TO 20 CANDIDATES for analysis (fixed limit - don't analyze more than 20)
+    final_list = list(candidate_usernames)[:20]
     print(
-        f"   ...Found {len(candidate_usernames)} unique candidates. Analyzing top {len(final_list)}..."
+        f"   ...Found {len(candidate_usernames)} unique candidates. Analyzing top {len(final_list)} (max 20)..."
     )
 
     # 4. Analyze & Score Each Candidate (PERMISSIVE MODE)
@@ -189,6 +226,8 @@ def find_profiles_for_me(my_username):
                     "username": user,
                     "name": c_profile.get("name") or user,
                     "url": c_profile.get("html_url"),
+                    "avatar_url": c_profile.get("avatar_url"),
+                    "bio": c_profile.get("bio"),
                     "score": assessment.get("score", 0),
                     "reason": assessment.get("reason", "No reason provided."),
                     "pitch": assessment.get("pitch", "Hi!"),
@@ -201,19 +240,26 @@ def find_profiles_for_me(my_username):
                     "username": user,
                     "name": c_profile.get("name") or user,
                     "url": c_profile.get("html_url"),
+                    "avatar_url": c_profile.get("avatar_url"),
+                    "bio": c_profile.get("bio"),
                     "score": 10,  # Low score to indicate failure
                     "reason": "LLM failed to score this profile, but they matched the keywords.",
                     "pitch": f"Hi {user}, I found your profile while searching for {keywords[0]}.",
                 }
             )
 
-    # 5. Sort & Return
+    # 5. Sort & Return (limit to top 10 best results)
     scored_candidates.sort(key=lambda x: x["score"], reverse=True)
+    
+    # Return top 10 best results (or fewer if we have less than 10)
+    final_matches = scored_candidates[:10]
+    
+    print(f"   ...Analysis complete. Returning top {len(final_matches)} best matches (out of {len(scored_candidates)} analyzed)")
 
     return {
         "status": "success",
         "total_analyzed": len(scored_candidates),
-        "matches": scored_candidates,
+        "matches": final_matches,  # Fixed limit: max 10 best results
     }
 
 

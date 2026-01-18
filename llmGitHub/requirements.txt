@@ -1,0 +1,10 @@
+# FastAPI and server dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+
+# OpenAI client (for Groq API - OpenAI compatible)
+openai>=1.0.0
+
+# HTTP requests for GitHub API
+requests>=2.31.0

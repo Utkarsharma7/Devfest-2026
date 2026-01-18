@@ -1,0 +1,58 @@
+========================================
+QUICK START - Copy & Paste These Commands
+========================================
+
+STEP 1: Start Ollama + LLM Scripts (WSL)
+----------------------------------------
+Open WSL terminal and run:
+
+cd /mnt/c/Users/utkar/OneDrive/Desktop/Devfest-2026/llm-scripts
+chmod +x start_llm_server.sh
+./start_llm_server.sh
+
+This script will automatically:
+- Start Ollama server
+- Check/install llama3.1 model
+- Start LLM Scripts server on port 8001
+
+Keep this terminal open!
+
+
+STEP 2: Start LinkedIn Scraper (Windows CMD)
+--------------------------------------------
+Open Windows CMD and run:
+
+cd linkedin_scraper
+python server.py
+
+Keep this terminal open!
+
+
+STEP 3: Start Frontend (Windows CMD)
+-------------------------------------
+Open another Windows CMD and run:
+
+cd my-app
+npm run dev
+
+Keep this terminal open!
+
+
+========================================
+VERIFY EVERYTHING IS RUNNING:
+========================================
+
+1. Ollama: http://localhost:11434 (WSL - test with: curl http://localhost:11434/api/tags)
+2. LLM Scripts: http://localhost:8001/docs (should show FastAPI docs)
+3. LinkedIn Scraper: http://localhost:8000 (should show endpoints)
+4. Frontend: http://localhost:3000 (should show landing page)
+
+
+========================================
+OR USE THE BATCH SCRIPT:
+========================================
+
+In Windows CMD, just run:
+start_all.bat
+
+This will start everything automatically!
