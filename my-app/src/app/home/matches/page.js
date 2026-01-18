@@ -154,7 +154,9 @@ export default function MatchesPage() {
             src: person.avatar_url || `https://images.unsplash.com/photo-${1507003211 + index}?w=400&h=600&fit=crop`,
             title: person.name || person.username || "GitHub User",
             subtitle: person.bio || person.reason || `${person.username} on GitHub`,
-            url: person.url || person.html_url || (person.username ? `https://github.com/${person.username}` : null) // GitHub profile URL
+            url: person.url || person.html_url || (person.username ? `https://github.com/${person.username}` : null),
+            score: person.score || null, // Include the match score
+            pitch: person.pitch || null // Include the pitch if available
           };
         }
         
