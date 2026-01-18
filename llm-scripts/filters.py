@@ -1,23 +1,10 @@
 import json
-import ollama
 import os
 
+# Set OLLAMA_HOST before importing ollama to avoid parsing issues
+os.environ["OLLAMA_HOST"] = "http://localhost:11434"
 
-# Configure Ollama client to use Windows Ollama from WSL
-def get_windows_host():
-    """Get Windows host IP from WSL"""
-    try:
-        with open("/etc/resolv.conf", "r") as f:
-            for line in f:
-                if line.startswith("nameserver"):
-                    return line.split()[1]
-    except:
-        pass
-    return "localhost"
-
-
-WINDOWS_HOST = get_windows_host()
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", f"http://{WINDOWS_HOST}:11434")
+import ollama
 
 
 def profile_to_text(profile):
@@ -80,7 +67,8 @@ Return JSON in this exact structure:
 
     """
 
-    client = ollama.Client(host=OLLAMA_HOST)
+    client = ollama.Client(host="http://localhost:11434")
+    print("Connecting to Ollama for filters...")
     result = client.generate(model="llama3.1", prompt=prompt)
     output_text = result["response"].strip()
     print("Raw LLaMA output:", output_text)

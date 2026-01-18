@@ -1,36 +1,10 @@
 import json
-import ollama
 import os
 
+# Set OLLAMA_HOST before importing ollama to avoid parsing issues
+os.environ["OLLAMA_HOST"] = "http://localhost:11434"
 
-# Configure Ollama client to use Windows Ollama from WSL
-def get_windows_host():
-    """Get Windows host IP from WSL, with fallback options"""
-    # Try multiple methods to find Windows host
-    hosts_to_try = []
-
-    # Method 1: Get from resolv.conf
-    try:
-        with open("/etc/resolv.conf", "r") as f:
-            for line in f:
-                if line.startswith("nameserver"):
-                    hosts_to_try.append(line.split()[1])
-    except:
-        pass
-
-    # Method 2: Try localhost (sometimes works in WSL2)
-    hosts_to_try.append("localhost")
-
-    # Method 3: Try 127.0.0.1
-    hosts_to_try.append("127.0.0.1")
-
-    # Return first available or default to localhost
-    return hosts_to_try[0] if hosts_to_try else "localhost"
-
-
-# Use Windows host IP if in WSL, otherwise use localhost
-WINDOWS_HOST = get_windows_host()
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", f"http://{WINDOWS_HOST}:11434")
+import ollama
 
 
 def profile_to_text(profile):
@@ -110,65 +84,16 @@ Do not include explanations, numbering, or extra text. Just return the array.
 
     """
 
-    # Connect to Ollama server - try multiple hosts
-    hosts_to_try = [
-        "http://localhost:11434",  # Try localhost first (works in WSL2)
-        OLLAMA_HOST,  # Then try detected Windows IP
-        f"http://{get_windows_host()}:11434",  # Fallback
-    ]
-
-    client = None
-    result = None
-    last_error = None
-
-    for host in hosts_to_try:
-        try:
-            client = ollama.Client(host=host)
-            # Check if model exists first
-            try:
-                models = client.list()
-                model_names = [m.get("name", "") for m in models.get("models", [])]
-                if (
-                    "llama3.1" not in model_names
-                    and "llama3.1:latest" not in model_names
-                ):
-                    print(
-                        f"⚠️  Model 'llama3.1' not found at {host}. Available models: {model_names}"
-                    )
-                    print(f"   Installing llama3.1...")
-                    client.pull("llama3.1")
-                    print(f"✅ Model installed successfully")
-            except Exception as model_check_error:
-                print(f"⚠️  Could not check models at {host}: {model_check_error}")
-
-            result = client.generate(model="llama3.1", prompt=prompt)
-            print(f"✅ Connected to Ollama at {host}")
-            break
-        except Exception as e:
-            error_str = str(e)
-            # Check if it's a model not found error
-            if "not found" in error_str.lower() or "404" in error_str:
-                print(f"⚠️  Model 'llama3.1' not found at {host}. Attempting to pull...")
-                try:
-                    client = ollama.Client(host=host)
-                    client.pull("llama3.1")
-                    print(f"✅ Model installed. Retrying...")
-                    result = client.generate(model="llama3.1", prompt=prompt)
-                    print(f"✅ Connected to Ollama at {host}")
-                    break
-                except Exception as pull_error:
-                    last_error = pull_error
-                    print(f"⚠️  Failed to pull model: {pull_error}")
-                    continue
-            else:
-                last_error = e
-                print(f"⚠️  Failed to connect to {host}: {e}")
-                continue
-
-    if result is None:
-        raise ConnectionError(
-            f"Could not connect to Ollama server or model not available. Tried: {hosts_to_try}. Last error: {last_error}"
-        )
+    # Connect to Ollama server at localhost
+    try:
+        client = ollama.Client(host="http://localhost:11434")
+        print("Connecting to Ollama at http://localhost:11434...")
+        result = client.generate(model="llama3.1", prompt=prompt)
+        print("✅ Connected to Ollama")
+    except Exception as e:
+        print(f"⚠️ Ollama error: {e}")
+        raise ConnectionError(f"Could not connect to Ollama server: {e}")
+    
     output_text = result["response"].strip()
     print("Raw LLaMA output:", output_text)
 

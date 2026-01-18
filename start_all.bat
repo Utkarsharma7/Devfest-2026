@@ -19,7 +19,7 @@ start "Ollama WSL" cmd /k "wsl bash -c \"ollama serve\""
 timeout /t 5 /nobreak >nul
 
 echo [3/6] Starting LLM Scripts Server on port 8001...
-start "LLM Scripts - 8001" cmd /k "cd /d %~dp0llm-scripts && set OLLAMA_HOST=http://localhost:11434 && python app.py"
+start "LLM Scripts - 8001" cmd /k "cd /d %~dp0llm-scripts && python app.py"
 timeout /t 3 /nobreak >nul
 
 echo [4/6] Starting OCR Server on port 8003...
