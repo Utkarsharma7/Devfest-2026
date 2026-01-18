@@ -30,42 +30,42 @@ def profile_to_text(profile):
 
 
 def filters(cv_text, filter_json):
-    prompt = f"""
-    You are an AI system that generates LinkedIn People Search filters.
+    # Build prompt without f-string to avoid curly brace issues
+    prompt = """You are an AI system that selects LinkedIn People Search filters.
 
-You must populate filters ONLY using values that appear in the user's
-profile AND that match the allowed options listed below.
+TASK: Based on the user's profile/resume, select the MOST RELEVANT filter values 
+from the available options to help find similar professionals.
 
-If no valid value exists for a filter, leave it as an empty list.
+RULES:
+1. Select ONLY values that exist in the "Available filters" below
+2. Select 1-3 values per category that best match the user's background
+3. Focus on: Industry, Location, Skills, Schools they attended
+4. If no good match exists for a category, leave it as empty list []
+5. Return ONLY valid JSON, no explanations
 
-Do NOT invent, generalize, or rephrase values.
-Do NOT add new fields.
-Do NOT include explanations or text outside JSON.
-
-User resume:
+User Profile/Resume:
 <<<
-{cv_text}
+""" + cv_text + """
 >>>
 
-Allowed filter options (use ONLY these values if applicable):
+Available filters (select from these ONLY):
 <<<
-{filter_json}
+""" + filter_json + """
 >>>
 
-Return JSON in this exact structure:
-
+Return JSON like this example:
 {
-        "Locations": [],
+  "Locations": ["India", "United States"],
+  "Industry": ["Technology, Information and Internet"],
   "Current company": [],
   "Past company": [],
   "School": [],
-  "Industry": [],
-  "Profile language": [],
+  "Profile language": ["English"],
   "Open to": [],
   "Service categories": []
 }
 
-    """
+Return ONLY the JSON object, nothing else."""
 
     client = ollama.Client(host="http://localhost:11434")
     print("Connecting to Ollama for filters...")
@@ -73,13 +73,30 @@ Return JSON in this exact structure:
     output_text = result["response"].strip()
     print("Raw LLaMA output:", output_text)
 
-    try:
-        keywords = json.loads(output_text)
-    except json.JSONDecodeError:
-        print("Warning: failed to parse LLaMA output. Returning empty scores.")
-        keywords = {}
+    # Clean up the output - remove markdown code blocks if present
+    if output_text.startswith("```json"):
+        output_text = output_text.replace("```json", "").replace("```", "").strip()
+    elif output_text.startswith("```"):
+        output_text = output_text.replace("```", "").strip()
 
-    return keywords
+    try:
+        selected_filters = json.loads(output_text)
+        print(f"Parsed filters: {selected_filters}")
+        return selected_filters
+    except json.JSONDecodeError as e:
+        print(f"Warning: failed to parse LLaMA output: {e}")
+        print(f"Raw output was: {output_text}")
+        # Return empty filters structure
+        return {
+            "Locations": [],
+            "Current company": [],
+            "Past company": [],
+            "School": [],
+            "Industry": [],
+            "Profile language": [],
+            "Open to": [],
+            "Service categories": []
+        }
 
 
 # if __name__ == "__main__":
