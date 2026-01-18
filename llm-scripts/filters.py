@@ -2,20 +2,22 @@ import json
 import ollama
 import os
 
+
 # Configure Ollama client to use Windows Ollama from WSL
 def get_windows_host():
     """Get Windows host IP from WSL"""
     try:
-        with open('/etc/resolv.conf', 'r') as f:
+        with open("/etc/resolv.conf", "r") as f:
             for line in f:
-                if line.startswith('nameserver'):
+                if line.startswith("nameserver"):
                     return line.split()[1]
     except:
         pass
-    return 'localhost'
+    return "localhost"
+
 
 WINDOWS_HOST = get_windows_host()
-OLLAMA_HOST = os.getenv('OLLAMA_HOST', f'http://{WINDOWS_HOST}:11434')
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", f"http://{WINDOWS_HOST}:11434")
 
 
 def profile_to_text(profile):
