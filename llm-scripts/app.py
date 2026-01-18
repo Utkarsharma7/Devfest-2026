@@ -4,6 +4,7 @@ from keywords import keywords_from_profile
 from compare import compare_profiles
 from filters import filters
 import asyncio
+import json
 from concurrent.futures import ThreadPoolExecutor
 import signal
 
@@ -117,8 +118,76 @@ def compare_api(payload: dict):
 
 
 @app.post("/filters")
-def filters_api(user_profile: dict):
-    return filters(user_profile)
+async def filters_api(payload: dict):
+    """
+    Process LinkedIn filters using LLM
+    Expects: { linkedinFilters: {...}, ocrData: {...}, userProfile: {...} }
+    """
+    try:
+        print(f"[FILTERS API] Received request")
+        
+        linkedin_filters = payload.get("linkedinFilters", {})
+        ocr_data = payload.get("ocrData", {})
+        user_profile = payload.get("userProfile", {})
+        
+        # Build CV text from OCR data or user profile
+        cv_text = ""
+        if ocr_data:
+            cv_text = ocr_data.get("extracted_text") or ocr_data.get("full_text", "")
+        
+        # Fallback to user profile answers
+        if not cv_text:
+            parts = []
+            if user_profile.get("goal"):
+                parts.append(f"Goal: {user_profile['goal']}")
+            if user_profile.get("skills"):
+                parts.append(f"Skills: {user_profile['skills']}")
+            if user_profile.get("projects"):
+                parts.append(f"Projects: {user_profile['projects']}")
+            cv_text = "\n".join(parts)
+        
+        # Convert linkedin_filters dict to JSON string
+        filter_json = json.dumps(linkedin_filters, indent=2)
+        
+        print(f"[FILTERS API] CV text length: {len(cv_text)}")
+        print(f"[FILTERS API] Filter options: {list(linkedin_filters.keys())}")
+        
+        # Run the blocking Ollama call in a thread pool with timeout
+        loop = asyncio.get_event_loop()
+        try:
+            result = await asyncio.wait_for(
+                loop.run_in_executor(executor, filters, cv_text, filter_json),
+                timeout=120.0
+            )
+            print(f"[FILTERS API] Generated filters: {result}")
+            return result
+        except asyncio.TimeoutError:
+            print(f"[FILTERS API] Timeout - returning empty filters")
+            return {
+                "Locations": [],
+                "Current company": [],
+                "Past company": [],
+                "School": [],
+                "Industry": [],
+                "Profile language": [],
+                "Open to": [],
+                "Service categories": []
+            }
+    except Exception as e:
+        print(f"[FILTERS API] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        # Return empty filters on error
+        return {
+            "Locations": [],
+            "Current company": [],
+            "Past company": [],
+            "School": [],
+            "Industry": [],
+            "Profile language": [],
+            "Open to": [],
+            "Service categories": []
+        }
 
 
 if __name__ == "__main__":

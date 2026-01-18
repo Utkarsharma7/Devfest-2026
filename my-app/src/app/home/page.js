@@ -91,7 +91,7 @@ export default function Dashboard() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("http://localhost:8000/ocr/pdf", {
+      const response = await fetch("http://localhost:8003/ocr/pdf", {
         method: "POST",
         body: formData,
       });

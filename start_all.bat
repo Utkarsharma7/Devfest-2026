@@ -4,56 +4,54 @@ echo Starting All Servers for Devfest-2026
 echo ========================================
 echo.
 
-echo [1/7] Installing dependencies...
+echo [1/6] Installing dependencies...
 echo   - LinkedIn Scraper...
-cd linkedin_scraper
+cd /d %~dp0linkedin_scraper
 pip install -r requirements.txt >nul 2>&1
-cd ..
-echo   - LLM Scripts OCR dependencies...
-pip install easyocr PyMuPDF pillow numpy fastapi uvicorn python-multipart >nul 2>&1
-echo   - Done!
+cd /d %~dp0
+echo   - LLM Scripts dependencies...
+pip install ollama easyocr PyMuPDF pillow numpy fastapi uvicorn python-multipart >nul 2>&1
+echo   Done!
 timeout /t 2 /nobreak >nul
 
-echo [2/7] Starting Ollama Server in WSL...
-wsl bash -c "cd /mnt/c/Users/utkar/OneDrive/Desktop/Devfest-2026/llm-scripts && chmod +x start_ollama_wsl.sh && ./start_ollama_wsl.sh"
+echo [2/6] Starting Ollama in WSL background...
+start "Ollama WSL" cmd /k "wsl bash -c \"ollama serve\""
 timeout /t 5 /nobreak >nul
 
-echo [3/7] Starting LLM Scripts Server on port 8001 in WSL...
-start "LLM Scripts - 8001" cmd /k "wsl bash -c \"cd /mnt/c/Users/utkar/OneDrive/Desktop/Devfest-2026/llm-scripts && source .venv/bin/activate && python app.py\""
-timeout /t 5 /nobreak >nul
-
-echo [4/7] Starting OCR Server on port 8003 on Windows...
-start "OCR Server - 8003" cmd /k "cd /d %~dp0llm-scripts && uvicorn app2:app --host 0.0.0.0 --port 8003 --reload"
+echo [3/6] Starting LLM Scripts Server on port 8001...
+start "LLM Scripts - 8001" cmd /k "cd /d %~dp0llm-scripts && set OLLAMA_HOST=http://localhost:11434 && python app.py"
 timeout /t 3 /nobreak >nul
 
-echo [5/7] Starting LinkedIn Scraper Server on port 8000 on Windows...
+echo [4/6] Starting OCR Server on port 8003...
+start "OCR Server - 8003" cmd /k "cd /d %~dp0llm-scripts && uvicorn app2:app --host 0.0.0.0 --port 8003"
+timeout /t 3 /nobreak >nul
+
+echo [5/6] Starting LinkedIn Scraper on port 8000...
 start "LinkedIn Scraper - 8000" cmd /k "cd /d %~dp0linkedin_scraper && python server.py"
 timeout /t 3 /nobreak >nul
 
-echo [6/7] Starting GitHub Matcher Server on port 8002 on Windows...
+echo [6/6] Starting GitHub Matcher on port 8002...
 start "GitHub Matcher - 8002" cmd /k "cd /d %~dp0llmGitHub && python app.py"
 timeout /t 3 /nobreak >nul
 
-echo [7/7] Starting Frontend on port 3000 on Windows...
+echo [7/6] Starting Frontend on port 3000...
 start "Frontend - 3000" cmd /k "cd /d %~dp0my-app && npm run dev"
 timeout /t 3 /nobreak >nul
 
 echo.
 echo ========================================
-echo All servers are starting!
+echo All servers starting!
 echo ========================================
 echo.
-echo Servers:
-echo   Ollama:           http://localhost:11434  WSL
-echo   LLM Scripts:      http://localhost:8001   WSL
-echo   OCR Server:       http://localhost:8003   Windows
-echo   LinkedIn Scraper: http://localhost:8000   Windows
-echo   GitHub Matcher:   http://localhost:8002   Windows
-echo   Frontend:         http://localhost:3000   Windows
+echo   Port 11434 - Ollama WSL
+echo   Port 8001  - LLM Scripts
+echo   Port 8003  - OCR Server
+echo   Port 8000  - LinkedIn Scraper
+echo   Port 8002  - GitHub Matcher
+echo   Port 3000  - Frontend
 echo.
-echo OCR Endpoints:
-echo   POST /ocr/pdf   - Extract text from PDF
-echo   POST /ocr/image - Extract text from image
+echo Make sure Ollama is installed in WSL: wsl ollama --version
+echo If not, run: wsl curl -fsSL https://ollama.com/install.sh ^| sh
 echo.
-echo Press any key to exit this window...
+echo Press any key to exit...
 pause >nul
