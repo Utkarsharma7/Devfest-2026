@@ -120,68 +120,6 @@ export default function Dashboard() {
   };
 
   /**
-   * Get LinkedIn filters based on keyword
-   */
-  const fetchLinkedInFilters = async (keyword) => {
-    try {
-      console.log("🔍 Fetching LinkedIn filters for keyword:", keyword);
-      const response = await fetch(
-        `http://localhost:8000/filter?keyword=${encodeURIComponent(keyword)}`,
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch LinkedIn filters");
-      }
-
-      const filters = await response.json();
-      console.log("✅ LinkedIn filters received:", filters);
-      return filters;
-    } catch (error) {
-      console.error("❌ LinkedIn filters error:", error);
-      return null;
-    }
-  };
-
-  /**
-   * Process filters using LLM with OCR data and LinkedIn filters
-   */
-  const processFiltersWithLLM = async (linkedinFilters, userProfile) => {
-    try {
-      console.log("🤖 Processing filters with LLM...");
-      
-      // Get OCR data from localStorage
-      const ocrDataStr = localStorage.getItem("ocrData");
-      const ocrData = ocrDataStr ? JSON.parse(ocrDataStr) : null;
-
-      const payload = {
-        linkedinFilters: linkedinFilters,
-        ocrData: ocrData,
-        userProfile: userProfile,
-      };
-
-      console.log("📦 Sending to LLM filters API:", payload);
-
-      const response = await fetch("http://localhost:8001/filters", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to process filters with LLM");
-      }
-
-      const processedFilters = await response.json();
-      console.log("✅ Processed filters from LLM:", processedFilters);
-      return processedFilters;
-    } catch (error) {
-      console.error("❌ LLM filters processing error:", error);
-      // Return original LinkedIn filters as fallback
-      return linkedinFilters;
-    }
-  };
-
-  /**
    * Fetch people from LinkedIn using processed filters
    */
   const fetchLinkedInPeople = async (keyword, filters) => {
@@ -464,27 +402,11 @@ export default function Dashboard() {
             try {
               await new Promise((resolve) => setTimeout(resolve, 500));
 
-              // Step 1: Get LinkedIn filters
-              const linkedinFilters = await fetchLinkedInFilters(primaryKeyword);
-              
-              if (!linkedinFilters || linkedinFilters.error) {
-                console.warn("⚠️ No LinkedIn filters available");
-                sessionStorage.setItem("linkedinCompleted", "true");
-                sessionStorage.setItem("linkedinCount", "0");
-                sessionStorage.removeItem("linkedinLoading");
-                return;
-              }
-
-              // Step 2: Process filters with LLM (uses OCR data from localStorage)
-              const processedFilters = await processFiltersWithLLM(
-                linkedinFilters,
-                userProfile,
-              );
-
-              // Step 3: Fetch people with processed filters
+              // Fetch LinkedIn people with empty filters (no filter processing)
+              console.log("👥 Fetching LinkedIn people with keyword:", primaryKeyword);
               const linkedinPeople = await fetchLinkedInPeople(
                 primaryKeyword,
-                processedFilters,
+                {}, // Empty filters - let LinkedIn scraper handle it
               );
 
               if (linkedinPeople.length === 0) {
