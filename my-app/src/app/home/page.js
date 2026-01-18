@@ -35,15 +35,22 @@ export default function Dashboard() {
     "You want to connect with",
     "What type of engagement are you looking for?",
   ];
-  
+
   // Question types: 'text' or 'radio'
-  const questionTypes = ['text', 'text', 'text', 'radio', 'radio'];
-  
+  const questionTypes = ["text", "text", "text", "radio", "radio"];
+
   // Radio options for question 4 (connection type)
-  const radioOptionsQ4 = ['hiring community', 'collaborators'];
-  
+  const radioOptionsQ4 = ["hiring community", "collaborators"];
+
   // Radio options for question 5 (engagement type)
-  const radioOptionsQ5 = ['open source projects', 'startup ventures', 'enterprise projects', 'research & academia', 'freelance work', 'mentorship'];
+  const radioOptionsQ5 = [
+    "open source projects",
+    "startup ventures",
+    "enterprise projects",
+    "research & academia",
+    "freelance work",
+    "mentorship",
+  ];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -101,16 +108,19 @@ export default function Dashboard() {
     e.preventDefault();
     // Check if answer is provided (for text) or selected (for radio)
     const currentAnswer = answers[currentQuestionIndex];
-    if (!currentAnswer || (questionTypes[currentQuestionIndex] === 'text' && !currentAnswer.trim())) {
+    if (
+      !currentAnswer ||
+      (questionTypes[currentQuestionIndex] === "text" && !currentAnswer.trim())
+    ) {
       return;
     }
 
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
-      } else {
-        // All questions answered - process and fetch data
-        setLoading(true);
-        try {
+    } else {
+      // All questions answered - process and fetch data
+      setLoading(true);
+      try {
         const user = auth.currentUser;
         if (user) {
           await saveUserAnswers(user.uid, answers);
@@ -127,64 +137,72 @@ export default function Dashboard() {
           connection_type: answers[3], // "hiring community" or "collaborators"
           engagement_type: answers[4], // Engagement type (open source, startup, etc.)
           // Create a comprehensive about section from all answers
-          about: `Goal: ${answers[0]}. Technical Skills: ${answers[1]}. Current Projects/Interests: ${answers[2]}. Looking for: ${answers[3]} (${answers[4]}).`
+          about: `Goal: ${answers[0]}. Technical Skills: ${answers[1]}. Current Projects/Interests: ${answers[2]}. Looking for: ${answers[3]} (${answers[4]}).`,
         };
 
         // Step 1: Get keywords from LLM (optional - can skip if LLM is down)
         console.log("Fetching keywords from LLM...");
         console.log("User profile:", userProfile);
         console.log("Request URL: http://localhost:8001/keywords");
-        
+
         // Clean keywords - remove formatting like "1) ", "2. ", "- ", etc.
         // Define this function at the top so it's accessible everywhere
         const cleanKeyword = (keyword) => {
-          if (typeof keyword !== 'string') return keyword || '';
+          if (typeof keyword !== "string") return keyword || "";
           return keyword
-            .replace(/^\d+[).]\s*/, '') // Remove "1) ", "2. ", etc.
-            .replace(/^[-*•]\s*/, '') // Remove "- ", "* ", "• ", etc.
+            .replace(/^\d+[).]\s*/, "") // Remove "1) ", "2. ", etc.
+            .replace(/^[-*•]\s*/, "") // Remove "- ", "* ", "• ", etc.
             .trim();
         };
-        
+
         let llmResponse;
         let keywords = [];
         // Fallback keyword: prefer skills (answers[1]), then goal (answers[0])
         let primaryKeyword = answers[1] || answers[0] || "developer"; // Fallback keyword
-        
+
         try {
-          llmResponse = await fetch('http://localhost:8001/keywords', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(userProfile)
+          llmResponse = await fetch("http://localhost:8001/keywords", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(userProfile),
           });
-          console.log("LLM Response status:", llmResponse.status, llmResponse.statusText);
-          
+          console.log(
+            "LLM Response status:",
+            llmResponse.status,
+            llmResponse.statusText,
+          );
+
           if (llmResponse.ok) {
             const llmData = await llmResponse.json();
             console.log("LLM Response data:", llmData);
             keywords = llmData.keywords || [];
-            
-            primaryKeyword = Array.isArray(keywords) && keywords.length > 0 
-              ? cleanKeyword(keywords[0]) 
-              : cleanKeyword(answers[1] || answers[0] || "developer");
+
+            primaryKeyword =
+              Array.isArray(keywords) && keywords.length > 0
+                ? cleanKeyword(keywords[0])
+                : cleanKeyword(answers[1] || answers[0] || "developer");
           } else {
             console.warn("LLM server returned error, using fallback keyword");
             // Clean the fallback keyword if it's a string with newlines/formatting
             const rawKeyword = answers[1] || answers[0] || "developer";
-            if (typeof rawKeyword === 'string') {
+            if (typeof rawKeyword === "string") {
               // Split by newlines, take first line, clean it
-              const firstLine = rawKeyword.split('\n')[0].trim();
+              const firstLine = rawKeyword.split("\n")[0].trim();
               primaryKeyword = cleanKeyword(firstLine);
             } else {
               primaryKeyword = cleanKeyword(rawKeyword);
             }
           }
         } catch (fetchError) {
-          console.warn("⚠️ LLM server not available, using fallback keywords. Error:", fetchError.message);
+          console.warn(
+            "⚠️ LLM server not available, using fallback keywords. Error:",
+            fetchError.message,
+          );
           // Clean the fallback keyword if it's a string with newlines/formatting
           const rawKeyword = answers[1] || answers[0] || "developer";
-          if (typeof rawKeyword === 'string') {
+          if (typeof rawKeyword === "string") {
             // Split by newlines, take first line, clean it
-            const firstLine = rawKeyword.split('\n')[0].trim();
+            const firstLine = rawKeyword.split("\n")[0].trim();
             primaryKeyword = cleanKeyword(firstLine);
             console.log("Using cleaned fallback keyword:", primaryKeyword);
           } else {
@@ -199,65 +217,107 @@ export default function Dashboard() {
 
         // Validate GitHub URL is not empty before proceeding
         if (!githubUrl || !githubUrl.trim()) {
-          setError("GitHub Profile URL is required. Please enter a valid GitHub URL.");
+          setError(
+            "GitHub Profile URL is required. Please enter a valid GitHub URL.",
+          );
           setLoading(false);
           return;
+        }
+
+        // Call LinkedIn scraper server to create session when GitHub link is submitted
+        console.log("Creating LinkedIn session...");
+        try {
+          const sessionResponse = await fetch(
+            "http://localhost:8000/create_session",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+
+          if (sessionResponse.ok) {
+            const sessionData = await sessionResponse.json();
+            console.log("LinkedIn session created:", sessionData);
+          } else {
+            console.warn(
+              "Failed to create LinkedIn session:",
+              sessionResponse.status,
+            );
+          }
+        } catch (sessionError) {
+          console.warn(
+            "Error creating LinkedIn session:",
+            sessionError.message,
+          );
         }
 
         // Step 2: Based on connection type, fetch data
         console.log("GitHub URL state:", githubUrl);
         console.log("LinkedIn URL state:", linkedinUrl);
-        
-        if (answers[3] === 'hiring community') {
+
+        if (answers[3] === "hiring community") {
           // For hiring community: fetch jobs
           const location = userProfile.domain || "Global"; // Use domain as location or default
           console.log("Fetching jobs...");
           const jobsResponse = await fetch(
-            `http://localhost:8000/job?keyword=${encodeURIComponent(primaryKeyword)}&location=${encodeURIComponent(location)}&max_jobs=10`
+            `http://localhost:8000/job?keyword=${encodeURIComponent(primaryKeyword)}&location=${encodeURIComponent(location)}&max_jobs=10`,
           );
 
           if (!jobsResponse.ok) {
-            throw new Error('Failed to fetch jobs');
+            throw new Error("Failed to fetch jobs");
           }
 
           const jobsData = await jobsResponse.json();
           console.log("Jobs received:", jobsData);
 
           // Store in sessionStorage and navigate
-          sessionStorage.setItem('matchesData', JSON.stringify({
-            type: 'jobs',
-            data: jobsData.data || []
-          }));
-          
+          sessionStorage.setItem(
+            "matchesData",
+            JSON.stringify({
+              type: "jobs",
+              data: jobsData.data || [],
+            }),
+          );
+
           // Navigate to matches page
           setLoading(false);
-          router.push('/home/matches');
+          router.push("/home/matches");
         } else {
           // For collaborators: Wait for GitHub first, then do LinkedIn in background
-          
+
           // Wait for GitHub results first (if still loading)
           console.log("=== WAITING FOR GITHUB RESULTS ===");
           console.log("GitHub matches already fetched:", githubPeople.length);
           console.log("GitHub loading state:", githubLoading);
-          
+
           // If GitHub is still loading, wait for the fetch promise to complete
           let finalGithubPeople = githubPeople.length > 0 ? githubPeople : [];
           if (githubLoading && githubFetchPromiseRef.current) {
-            console.log("⚠️ GitHub is still fetching, waiting for promise to complete...");
+            console.log(
+              "⚠️ GitHub is still fetching, waiting for promise to complete...",
+            );
             try {
               // Wait for the GitHub fetch promise to complete and get its result
               const promiseResult = await githubFetchPromiseRef.current;
               if (promiseResult && promiseResult.length > 0) {
                 finalGithubPeople = promiseResult;
-                console.log("✅ GitHub results received from promise:", finalGithubPeople.length);
+                console.log(
+                  "✅ GitHub results received from promise:",
+                  finalGithubPeople.length,
+                );
               } else {
                 // Fallback to state if promise didn't return results
-                await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise((resolve) => setTimeout(resolve, 300));
                 if (githubPeople.length > 0) {
                   finalGithubPeople = githubPeople;
-                  console.log("✅ GitHub results received from state:", finalGithubPeople.length);
+                  console.log(
+                    "✅ GitHub results received from state:",
+                    finalGithubPeople.length,
+                  );
                 } else {
-                  console.warn("⚠️ GitHub fetch completed but no results found");
+                  console.warn(
+                    "⚠️ GitHub fetch completed but no results found",
+                  );
                 }
               }
             } catch (err) {
@@ -267,48 +327,59 @@ export default function Dashboard() {
             }
           } else if (githubPeople.length > 0) {
             finalGithubPeople = githubPeople;
-            console.log("✅ GitHub results already available:", finalGithubPeople.length);
+            console.log(
+              "✅ GitHub results already available:",
+              finalGithubPeople.length,
+            );
           }
 
           // Only navigate once we have GitHub results (or confirmed empty)
           // Limit to 20 GitHub results initially
-          const allPeopleInitial = finalGithubPeople.length > 0 
-            ? finalGithubPeople.slice(0, 20) 
-            : [];
-          console.log("Initial people (GitHub only, max 20):", allPeopleInitial.length);
+          const allPeopleInitial =
+            finalGithubPeople.length > 0 ? finalGithubPeople.slice(0, 20) : [];
+          console.log(
+            "Initial people (GitHub only, max 20):",
+            allPeopleInitial.length,
+          );
 
           // Store initial GitHub results (even if empty - will show loading on matches page)
-          sessionStorage.setItem('matchesData', JSON.stringify({
-            type: 'people',
-            data: allPeopleInitial
-          }));
+          sessionStorage.setItem(
+            "matchesData",
+            JSON.stringify({
+              type: "people",
+              data: allPeopleInitial,
+            }),
+          );
 
           // Set flag that LinkedIn is loading
-          sessionStorage.setItem('linkedinLoading', 'true');
+          sessionStorage.setItem("linkedinLoading", "true");
 
           // IMPORTANT: Clear loading state BEFORE navigation
           setLoading(false);
-          
+
           // Navigate immediately after GitHub is ready
-          console.log("🚀 Navigating to matches page with GitHub results:", allPeopleInitial.length);
-          router.push('/home/matches');
+          console.log(
+            "🚀 Navigating to matches page with GitHub results:",
+            allPeopleInitial.length,
+          );
+          router.push("/home/matches");
 
           // Fetch LinkedIn results asynchronously after navigation
           // This will update the results by replacing top 5 GitHub with LinkedIn
           (async () => {
             try {
               console.log("Fetching LinkedIn results asynchronously...");
-              
+
               // Wait a bit to ensure page navigation completes
-              await new Promise(resolve => setTimeout(resolve, 500));
-              
+              await new Promise((resolve) => setTimeout(resolve, 500));
+
               // Try LinkedIn filters and people (skip if LinkedIn server is down)
               let linkedinPeopleAsync = [];
-              
+
               try {
                 console.log("Attempting LinkedIn filters...");
                 const filtersResponseAsync = await fetch(
-                  `http://localhost:8000/filter?keyword=${encodeURIComponent(primaryKeyword)}`
+                  `http://localhost:8000/filter?keyword=${encodeURIComponent(primaryKeyword)}`,
                 );
 
                 if (filtersResponseAsync.ok) {
@@ -317,54 +388,84 @@ export default function Dashboard() {
 
                   // Try to get people from LinkedIn
                   console.log("Fetching people from LinkedIn...");
-                  const peopleResponseAsync = await fetch('http://localhost:8000/people', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      keyword: primaryKeyword,
-                      filters: filtersDataAsync
-                    })
-                  });
+                  const peopleResponseAsync = await fetch(
+                    "http://localhost:8000/people",
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        keyword: primaryKeyword,
+                        filters: filtersDataAsync,
+                      }),
+                    },
+                  );
 
                   if (peopleResponseAsync.ok) {
                     const peopleDataAsync = await peopleResponseAsync.json();
                     console.log("LinkedIn people received:", peopleDataAsync);
-                    
+
                     // Handle different response structures
                     if (Array.isArray(peopleDataAsync)) {
                       linkedinPeopleAsync = peopleDataAsync;
-                    } else if (peopleDataAsync.data && Array.isArray(peopleDataAsync.data)) {
+                    } else if (
+                      peopleDataAsync.data &&
+                      Array.isArray(peopleDataAsync.data)
+                    ) {
                       linkedinPeopleAsync = peopleDataAsync.data;
-                    } else if (peopleDataAsync.results && Array.isArray(peopleDataAsync.results)) {
+                    } else if (
+                      peopleDataAsync.results &&
+                      Array.isArray(peopleDataAsync.results)
+                    ) {
                       linkedinPeopleAsync = peopleDataAsync.results;
                     } else if (peopleDataAsync.error) {
-                      console.warn("LinkedIn API returned error:", peopleDataAsync.error);
+                      console.warn(
+                        "LinkedIn API returned error:",
+                        peopleDataAsync.error,
+                      );
                       linkedinPeopleAsync = [];
                     } else {
-                      console.warn("Unexpected LinkedIn response structure:", peopleDataAsync);
+                      console.warn(
+                        "Unexpected LinkedIn response structure:",
+                        peopleDataAsync,
+                      );
                       linkedinPeopleAsync = [];
                     }
-                    console.log("Parsed LinkedIn results count:", linkedinPeopleAsync.length);
+                    console.log(
+                      "Parsed LinkedIn results count:",
+                      linkedinPeopleAsync.length,
+                    );
                   }
                 } else {
-                  console.warn("⚠️ LinkedIn filters fetch failed, skipping LinkedIn");
+                  console.warn(
+                    "⚠️ LinkedIn filters fetch failed, skipping LinkedIn",
+                  );
                 }
               } catch (linkedinErrorAsync) {
-                console.warn("⚠️ LinkedIn server not available, skipping LinkedIn. Error:", linkedinErrorAsync.message);
+                console.warn(
+                  "⚠️ LinkedIn server not available, skipping LinkedIn. Error:",
+                  linkedinErrorAsync.message,
+                );
               }
 
               // Get current GitHub results from sessionStorage (not from state, which might be stale)
-              const currentMatchesDataStr = sessionStorage.getItem('matchesData');
+              const currentMatchesDataStr =
+                sessionStorage.getItem("matchesData");
               let currentGithubPeople = [];
               if (currentMatchesDataStr) {
                 try {
                   const currentMatchesData = JSON.parse(currentMatchesDataStr);
                   // Get all results that are NOT LinkedIn (initially all are GitHub)
-                  currentGithubPeople = (currentMatchesData.data || []).filter(p => 
-                    p.source !== 'linkedin'
+                  currentGithubPeople = (currentMatchesData.data || []).filter(
+                    (p) => p.source !== "linkedin",
                   );
-                  console.log("Total results in sessionStorage:", (currentMatchesData.data || []).length);
-                  console.log("GitHub results filtered:", currentGithubPeople.length);
+                  console.log(
+                    "Total results in sessionStorage:",
+                    (currentMatchesData.data || []).length,
+                  );
+                  console.log(
+                    "GitHub results filtered:",
+                    currentGithubPeople.length,
+                  );
                 } catch (err) {
                   console.error("Error reading current GitHub data:", err);
                   // Fallback to state if sessionStorage fails
@@ -375,60 +476,97 @@ export default function Dashboard() {
                 currentGithubPeople = githubPeople || [];
               }
 
-              console.log("Current GitHub people count:", currentGithubPeople.length);
-              console.log("LinkedIn results received:", linkedinPeopleAsync ? linkedinPeopleAsync.length : 0);
+              console.log(
+                "Current GitHub people count:",
+                currentGithubPeople.length,
+              );
+              console.log(
+                "LinkedIn results received:",
+                linkedinPeopleAsync ? linkedinPeopleAsync.length : 0,
+              );
 
               // Only merge if we have LinkedIn results (check it's defined and is an array)
-              if (linkedinPeopleAsync && Array.isArray(linkedinPeopleAsync) && linkedinPeopleAsync.length > 0) {
+              if (
+                linkedinPeopleAsync &&
+                Array.isArray(linkedinPeopleAsync) &&
+                linkedinPeopleAsync.length > 0
+              ) {
                 // Append LinkedIn results to the existing GitHub results
-                const linkedinWithSource = linkedinPeopleAsync.map(p => ({ ...p, source: 'linkedin' }));
+                const linkedinWithSource = linkedinPeopleAsync.map((p) => ({
+                  ...p,
+                  source: "linkedin",
+                }));
                 // Use all LinkedIn results (no limit, or set a higher limit if needed)
                 const topLinkedin = linkedinWithSource; // Use all LinkedIn results
-                
+
                 // Merge: Keep all 20 GitHub + append 10 LinkedIn (total 30 cards)
                 const finalPeople = [
                   ...currentGithubPeople.slice(0, 20), // Keep all 20 GitHub
-                  ...topLinkedin  // Append 10 LinkedIn
+                  ...topLinkedin, // Append 10 LinkedIn
                 ];
 
-                console.log("GitHub results (kept):", currentGithubPeople.slice(0, 20).length);
+                console.log(
+                  "GitHub results (kept):",
+                  currentGithubPeople.slice(0, 20).length,
+                );
                 console.log("LinkedIn results (appended):", topLinkedin.length);
-                console.log("Final merged people (20 GitHub + 10 LinkedIn = 30 total):", finalPeople.length);
+                console.log(
+                  "Final merged people (20 GitHub + 10 LinkedIn = 30 total):",
+                  finalPeople.length,
+                );
 
                 // Update sessionStorage with merged results
-                sessionStorage.setItem('matchesData', JSON.stringify({
-                  type: 'people',
-                  data: finalPeople
-                }));
+                sessionStorage.setItem(
+                  "matchesData",
+                  JSON.stringify({
+                    type: "people",
+                    data: finalPeople,
+                  }),
+                );
               } else {
                 // If no LinkedIn results, keep all GitHub results (don't update, already correct)
                 console.log("No LinkedIn results, keeping all GitHub results");
-                console.log("Keeping GitHub people count:", currentGithubPeople.length);
+                console.log(
+                  "Keeping GitHub people count:",
+                  currentGithubPeople.length,
+                );
                 // Store LinkedIn status as completed (even if empty)
-                sessionStorage.setItem('linkedinCompleted', 'true');
-                sessionStorage.setItem('linkedinCount', '0');
+                sessionStorage.setItem("linkedinCompleted", "true");
+                sessionStorage.setItem("linkedinCount", "0");
               }
-              
+
               // Remove loading flag and mark as completed
-              sessionStorage.removeItem('linkedinLoading');
-              if (linkedinPeopleAsync && Array.isArray(linkedinPeopleAsync) && linkedinPeopleAsync.length > 0) {
-                sessionStorage.setItem('linkedinCompleted', 'true');
-                sessionStorage.setItem('linkedinCount', linkedinPeopleAsync.length.toString());
+              sessionStorage.removeItem("linkedinLoading");
+              if (
+                linkedinPeopleAsync &&
+                Array.isArray(linkedinPeopleAsync) &&
+                linkedinPeopleAsync.length > 0
+              ) {
+                sessionStorage.setItem("linkedinCompleted", "true");
+                sessionStorage.setItem(
+                  "linkedinCount",
+                  linkedinPeopleAsync.length.toString(),
+                );
               } else {
-                sessionStorage.setItem('linkedinCompleted', 'true');
-                sessionStorage.setItem('linkedinCount', '0');
+                sessionStorage.setItem("linkedinCompleted", "true");
+                sessionStorage.setItem("linkedinCount", "0");
               }
-              
+
               // Dispatch storage event to notify matches page
-              window.dispatchEvent(new Event('storage'));
-              window.dispatchEvent(new CustomEvent('matchesDataUpdated'));
-              
+              window.dispatchEvent(new Event("storage"));
+              window.dispatchEvent(new CustomEvent("matchesDataUpdated"));
             } catch (asyncError) {
-              console.error("Error fetching LinkedIn results asynchronously:", asyncError);
-              sessionStorage.removeItem('linkedinLoading');
-              sessionStorage.setItem('linkedinCompleted', 'true');
-              sessionStorage.setItem('linkedinCount', '0');
-              sessionStorage.setItem('linkedinError', asyncError.message || 'Failed to fetch LinkedIn results');
+              console.error(
+                "Error fetching LinkedIn results asynchronously:",
+                asyncError,
+              );
+              sessionStorage.removeItem("linkedinLoading");
+              sessionStorage.setItem("linkedinCompleted", "true");
+              sessionStorage.setItem("linkedinCount", "0");
+              sessionStorage.setItem(
+                "linkedinError",
+                asyncError.message || "Failed to fetch LinkedIn results",
+              );
             }
           })();
 
@@ -440,12 +578,15 @@ export default function Dashboard() {
         console.error("Error stack:", error.stack);
         setLoading(false);
         // Still navigate but with error state
-        sessionStorage.setItem('matchesError', error.message);
-        sessionStorage.setItem('matchesData', JSON.stringify({
-          type: answers[2] === 'hiring community' ? 'jobs' : 'people',
-          data: []
-        }));
-        router.push('/home/matches');
+        sessionStorage.setItem("matchesError", error.message);
+        sessionStorage.setItem(
+          "matchesData",
+          JSON.stringify({
+            type: answers[2] === "hiring community" ? "jobs" : "people",
+            data: [],
+          }),
+        );
+        router.push("/home/matches");
       }
     }
   };
@@ -460,7 +601,7 @@ export default function Dashboard() {
   const fetchGitHubMatches = async () => {
     console.log("=== fetchGitHubMatches() CALLED ===");
     console.log("GitHub URL state in fetchGitHubMatches:", githubUrl);
-    
+
     if (!githubUrl || !githubUrl.trim()) {
       console.log("⚠️ No GitHub URL provided, skipping GitHub fetch");
       return null;
@@ -469,43 +610,62 @@ export default function Dashboard() {
     setGithubLoading(true);
     console.log("=== STARTING GITHUB FETCH (when questions started) ===");
     console.log("GitHub URL:", githubUrl);
-    
+
     // Create and store the promise
     const fetchPromise = (async () => {
       try {
         // Extract username from GitHub URL
-        const githubUsername = githubUrl.trim()
-          .replace(/^https?:\/\/(www\.)?github\.com\//, '')
-          .replace(/\/$/, '')
-          .split('/')[0];
-        
+        const githubUsername = githubUrl
+          .trim()
+          .replace(/^https?:\/\/(www\.)?github\.com\//, "")
+          .replace(/\/$/, "")
+          .split("/")[0];
+
         if (githubUsername) {
           console.log("🚀 Fetching GitHub matches for:", githubUsername);
-          console.log("GitHub API URL: http://localhost:8002/match/" + githubUsername);
-          
-          const githubResponse = await fetch(`http://localhost:8002/match/${githubUsername}`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-          });
-          
+          console.log(
+            "GitHub API URL: http://localhost:8002/match/" + githubUsername,
+          );
+
+          const githubResponse = await fetch(
+            `http://localhost:8002/match/${githubUsername}`,
+            {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+
           console.log("GitHub response status:", githubResponse.status);
-          
+
           if (githubResponse.ok) {
             const githubData = await githubResponse.json();
             console.log("✅ GitHub matches received:", githubData);
-            console.log("Number of GitHub matches:", (githubData.matches || []).length);
-            
-            const processedGithubPeople = (githubData.matches || []).map(match => ({
-              ...match,
-              source: 'github'
-            }));
-            
+            console.log(
+              "Number of GitHub matches:",
+              (githubData.matches || []).length,
+            );
+
+            const processedGithubPeople = (githubData.matches || []).map(
+              (match) => ({
+                ...match,
+                source: "github",
+              }),
+            );
+
             setGithubPeople(processedGithubPeople);
-            console.log("✅✅ GitHub matches processed and stored:", processedGithubPeople.length, "profiles");
+            console.log(
+              "✅✅ GitHub matches processed and stored:",
+              processedGithubPeople.length,
+              "profiles",
+            );
             return processedGithubPeople;
           } else {
             const errorText = await githubResponse.text();
-            console.error("❌ GitHub fetch failed:", githubResponse.status, errorText);
+            console.error(
+              "❌ GitHub fetch failed:",
+              githubResponse.status,
+              errorText,
+            );
             return [];
           }
         } else {
@@ -514,14 +674,18 @@ export default function Dashboard() {
         }
       } catch (githubFetchError) {
         console.error("❌ GitHub API error:", githubFetchError);
-        console.error("Error details:", githubFetchError.message, githubFetchError.stack);
+        console.error(
+          "Error details:",
+          githubFetchError.message,
+          githubFetchError.stack,
+        );
         return [];
       } finally {
         setGithubLoading(false);
         console.log("=== GITHUB FETCH COMPLETE ===");
       }
     })();
-    
+
     // Store promise reference so we can await it later
     githubFetchPromiseRef.current = fetchPromise;
     return fetchPromise;
@@ -530,23 +694,25 @@ export default function Dashboard() {
   const handleStartQuestions = () => {
     console.log("=== START QUESTIONS BUTTON CLICKED ===");
     console.log("GitHub URL at button click:", githubUrl);
-    
+
     // Validate GitHub URL is not empty
     if (!githubUrl || !githubUrl.trim()) {
       setError("Please enter a GitHub Profile URL before starting questions");
       return;
     }
-    
+
     setError(""); // Clear any previous errors
-    
+
     // Start GitHub fetch FIRST, before showing questions
     console.log("🚀 Starting GitHub fetch BEFORE showing questions...");
     const githubPromise = fetchGitHubMatches();
     console.log("GitHub fetch promise created:", !!githubPromise);
-    
+
     // Then show questions
     setShowQuestions(true);
-    console.log("Questions view shown. GitHub fetch should be running in background.");
+    console.log(
+      "Questions view shown. GitHub fetch should be running in background.",
+    );
   };
 
   return (
@@ -745,20 +911,36 @@ export default function Dashboard() {
                     </CardItem>
                     <form onSubmit={handleQuestionSubmit}>
                       <CardItem translateZ="40" className="mb-6">
-                        {questionTypes[currentQuestionIndex] === 'radio' ? (
+                        {questionTypes[currentQuestionIndex] === "radio" ? (
                           <div className="form-control space-y-4">
-                            {(currentQuestionIndex === 3 ? radioOptionsQ4 : radioOptionsQ5).map((option, index) => (
-                              <label key={index} className="label cursor-pointer justify-start gap-4 p-4 rounded-lg bg-neutral-900 border border-neutral-700 hover:border-purple-500 transition-colors">
+                            {(currentQuestionIndex === 3
+                              ? radioOptionsQ4
+                              : radioOptionsQ5
+                            ).map((option, index) => (
+                              <label
+                                key={index}
+                                className="label cursor-pointer justify-start gap-4 p-4 rounded-lg bg-neutral-900 border border-neutral-700 hover:border-purple-500 transition-colors"
+                              >
                                 <input
                                   type="radio"
-                                  name={currentQuestionIndex === 3 ? "connectionType" : "engagementType"}
+                                  name={
+                                    currentQuestionIndex === 3
+                                      ? "connectionType"
+                                      : "engagementType"
+                                  }
                                   value={option}
-                                  checked={answers[currentQuestionIndex] === option}
-                                  onChange={(e) => handleAnswerChange(e.target.value)}
+                                  checked={
+                                    answers[currentQuestionIndex] === option
+                                  }
+                                  onChange={(e) =>
+                                    handleAnswerChange(e.target.value)
+                                  }
                                   className="radio radio-primary"
                                   required
                                 />
-                                <span className="label-text text-white capitalize text-lg">{option}</span>
+                                <span className="label-text text-white capitalize text-lg">
+                                  {option}
+                                </span>
                               </label>
                             ))}
                           </div>
@@ -784,10 +966,10 @@ export default function Dashboard() {
                               <span className="animate-spin">⏳</span>
                               Processing...
                             </span>
+                          ) : currentQuestionIndex < questions.length - 1 ? (
+                            "Next Question"
                           ) : (
-                            currentQuestionIndex < questions.length - 1
-                              ? "Next Question"
-                              : "Finish"
+                            "Finish"
                           )}
                         </button>
                       </CardItem>

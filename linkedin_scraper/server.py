@@ -1,4 +1,3 @@
-
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +16,7 @@ from bs4 import BeautifulSoup
 
 # Adjust path if needed to import linkedin_scraper
 import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from linkedin_scraper.scrapers.search import SearchScraper
@@ -141,6 +141,7 @@ class LinkedInJobsScraper:
                 break
         return all_jobs[:max_jobs]
 
+
 app = FastAPI()
 
 # Allow all origins
@@ -151,6 +152,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 async def scrape_filters_logic(keyword: str):
     print(f"Processing /filter for keyword: {keyword}")
@@ -166,21 +168,24 @@ async def scrape_filters_logic(keyword: str):
             return {"error": str(e)}
 
         scraper = SearchScraper(browser.page)
-        
+
         base_url = "https://www.linkedin.com/search/results/people/"
         url = f"{base_url}?keywords={urllib.parse.quote(keyword)}&origin=SWITCH_SEARCH_VERTICAL"
-        
+
         await scraper.navigate_and_wait(url)
         await scraper.wait_and_focus(3)
-        
+
         try:
             await scraper.ensure_logged_in()
         except Exception as auth_error:
             print(f"Authentication error: {auth_error}")
-            return {"error": f"Not logged in to LinkedIn. Please create a session by running 'python samples/create_session.py'"}
+            return {
+                "error": f"Not logged in to LinkedIn. Please create a session by running 'python samples/create_session.py'"
+            }
 
         filters = await scraper.get_all_filters()
         return filters
+
 
 async def scrape_people_logic(keyword: str, filters: Dict[str, List[str]]):
     print(f"Processing /people for keyword: {keyword} with filters: {filters}")
@@ -191,42 +196,52 @@ async def scrape_people_logic(keyword: str, filters: Dict[str, List[str]]):
             else:
                 return {"error": "No session found"}
         except:
-             return {"error": "Session load error"}
+            return {"error": "Session load error"}
 
         scraper = SearchScraper(browser.page)
-        
+
         base_url = "https://www.linkedin.com/search/results/people/"
         url = f"{base_url}?keywords={urllib.parse.quote(keyword)}&origin=SWITCH_SEARCH_VERTICAL"
-        
+
         await scraper.navigate_and_wait(url)
         await scraper.wait_and_focus(3)
-        
+
         try:
             await scraper.ensure_logged_in()
         except Exception as auth_error:
             print(f"Authentication error: {auth_error}")
-            return {"error": f"Not logged in to LinkedIn. Please create a session by running 'python samples/create_session.py'", "results": []}
-        
+            return {
+                "error": f"Not logged in to LinkedIn. Please create a session by running 'python samples/create_session.py'",
+                "results": [],
+            }
+
         # Apply Filters if provided (check if filters dict is non-empty and has actual options)
-        has_filters = filters and isinstance(filters, dict) and any(
-            options and isinstance(options, list) and len(options) > 0 
-            for options in filters.values()
+        has_filters = (
+            filters
+            and isinstance(filters, dict)
+            and any(
+                options and isinstance(options, list) and len(options) > 0
+                for options in filters.values()
+            )
         )
-        
+
         if has_filters:
             try:
                 print(f"Applying filters: {filters}")
                 await scraper.apply_search_filters(filters)
                 url = browser.page.url
             except Exception as filter_error:
-                print(f"Warning: Error applying filters (continuing without filters): {filter_error}")
+                print(
+                    f"Warning: Error applying filters (continuing without filters): {filter_error}"
+                )
                 # Continue scraping without filters if filter application fails
-        
+
         # Scrape (increased max_scrolls to get more results)
         results = await scraper.scrape(url, max_scrolls=10)
-        
+
         # Convert to dict
         return json.loads(results.to_json())
+
 
 @app.get("/")
 def root():
@@ -238,15 +253,17 @@ def root():
             "filter": "GET /filter?keyword=<keyword> - Get available filters for people search",
             "people": "POST /people - Scrape people profiles with keyword and filters",
             "job": "GET /job?keyword=<keyword>&location=<location> - Scrape job listings",
-            "docs": "GET /docs - Interactive API documentation"
+            "docs": "GET /docs - Interactive API documentation",
         },
-        "server": "http://localhost:8000"
+        "server": "http://localhost:8000",
     }
+
 
 @app.get("/filter")
 @app.get("/filter/")
 async def get_filters(keyword: str):
     return await scrape_filters_logic(keyword)
+
 
 @app.get("/people")
 @app.get("/people/")
@@ -256,16 +273,17 @@ async def get_people(keyword: str, request: Request):
         body = await request.json()
     except:
         body = {}
-    
+
     # Body is expected to be the filters dict
     # If empty or not provided, use empty dict
     filters = body if body else {}
-    
+
     # Ensure it's a dict
     if not isinstance(filters, dict):
         filters = {}
 
     return await scrape_people_logic(keyword, filters)
+
 
 @app.post("/people")
 @app.post("/people/")
@@ -275,25 +293,26 @@ async def post_people(request: Request):
         body = await request.json()
         keyword = body.get("keyword", "")
         filters = body.get("filters", {})
-        
+
         if not keyword:
             return {"error": "keyword is required in request body"}
-        
+
         return await scrape_people_logic(keyword, filters)
     except Exception as e:
         return {"error": f"Invalid request: {str(e)}"}
+
 
 @app.get("/job")
 @app.get("/job/")
 async def get_jobs(keyword: str, location: str, max_jobs: int = 100):
     """
     Scrape LinkedIn jobs based on keyword and location.
-    
+
     Parameters:
     - keyword: Job title or keywords to search (e.g., "AI/ML Engineer")
     - location: Location to search in (e.g., "India")
     - max_jobs: Maximum number of jobs to scrape (default: 100)
-    
+
     Returns:
     - JSON array of job listings with title, company, location, job_link, and posted_date
     """
@@ -301,15 +320,20 @@ async def get_jobs(keyword: str, location: str, max_jobs: int = 100):
         print(f"Processing /job endpoint with keyword: {keyword}, location: {location}")
         scraper = LinkedInJobsScraper()
         jobs = scraper.scrape_jobs(keyword, location, max_jobs)
-        
+
         if not jobs:
-            return {"status": "success", "message": "No jobs found", "data": [], "count": 0}
-        
+            return {
+                "status": "success",
+                "message": "No jobs found",
+                "data": [],
+                "count": 0,
+            }
+
         return {
             "status": "success",
             "message": f"Successfully scraped {len(jobs)} jobs",
             "data": [asdict(job) for job in jobs],
-            "count": len(jobs)
+            "count": len(jobs),
         }
     except Exception as e:
         print(f"Error in /job endpoint: {str(e)}")
@@ -317,8 +341,43 @@ async def get_jobs(keyword: str, location: str, max_jobs: int = 100):
             "status": "error",
             "message": f"Error scraping jobs: {str(e)}",
             "data": [],
-            "count": 0
+            "count": 0,
         }
+
+
+@app.post("/create_session")
+async def create_session():
+    """Create a LinkedIn session by running the create_session.py script."""
+    try:
+        import subprocess
+        import sys
+
+        # Run the create_session.py script
+        result = subprocess.run(
+            [
+                sys.executable,
+                os.path.join(os.path.dirname(__file__), "samples", "create_session.py"),
+            ],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(__file__),
+        )
+
+        if result.returncode == 0:
+            return {
+                "status": "success",
+                "message": "LinkedIn session created successfully",
+                "output": result.stdout,
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "Failed to create LinkedIn session",
+                "error": result.stderr,
+            }
+    except Exception as e:
+        return {"status": "error", "message": f"Error creating session: {str(e)}"}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
