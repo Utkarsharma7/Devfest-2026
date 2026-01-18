@@ -42,9 +42,7 @@ def profile_to_text(profile):
     return "\n".join(parts)
 
 
-def filters(profile_json, filter_json):
-    profile_text = profile_to_text(profile_json)
-
+def filters(cv_text, filter_json):
     prompt = f"""
     You are an AI system that generates LinkedIn People Search filters.
 
@@ -57,9 +55,9 @@ Do NOT invent, generalize, or rephrase values.
 Do NOT add new fields.
 Do NOT include explanations or text outside JSON.
 
-User profile data:
+User resume:
 <<<
-{profile_text}
+{cv_text}
 >>>
 
 Allowed filter options (use ONLY these values if applicable):
