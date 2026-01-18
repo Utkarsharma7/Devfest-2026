@@ -126,47 +126,56 @@ export default function MatchesPage() {
     if (type === 'jobs') {
       // Transform job data to cards
       return data.map((job, index) => ({
-        id: `job-${index}-${job.job_link || index}`, // Unique ID for React key
+        id: `job-${index}-${job.job_link || index}`,
         src: job.image_url || `https://images.unsplash.com/photo-${1507003211 + index}?w=400&h=600&fit=crop`,
         title: job.title || job.job_title || "Job Position",
         subtitle: `${job.company || "Company"} • ${job.location || "Location"}`
       }));
     } else {
       // Transform people data to cards
-      // LinkedIn returns: title, subtitle, image_url, url
-      // GitHub returns: username, name, url, avatar_url, bio, score, reason
       return data.map((person, index) => {
-        // Handle LinkedIn format
-        if (person.source === 'linkedin' || person.title || person.image_url) {
+        // Check source field FIRST (most reliable)
+        const isGitHub = person.source === 'github';
+        const isLinkedIn = person.source === 'linkedin';
+        
+        // Handle GitHub format
+        if (isGitHub || (!isLinkedIn && (person.username || person.avatar_url))) {
           return {
-            id: `person-${index}-${person.url || person.urn_id || index}`,
-            src: person.image_url || person.profile_picture_url || `https://images.unsplash.com/photo-${1507003211 + index}?w=400&h=600&fit=crop`,
-            title: person.title || person.name || person.full_name || "Name",
-            subtitle: person.subtitle || person.headline || person.current_position || person.title || "Professional",
-            url: person.url || null // LinkedIn profile URL
+            id: `github-${index}-${person.username || index}`,
+            src: person.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name || person.username || 'User')}&background=random&size=400`,
+            title: person.name || person.username || "GitHub User",
+            subtitle: person.reason || person.bio || `@${person.username}`,
+            url: person.url || (person.username ? `https://github.com/${person.username}` : null),
+            score: person.score ?? null,
+            pitch: person.pitch || null,
+            source: 'github'
           };
         }
         
-        // Handle GitHub format
-        if (person.source === 'github' || person.username || person.avatar_url) {
+        // Handle LinkedIn format
+        if (isLinkedIn || person.title || person.image_url || person.subtitle) {
           return {
-            id: `github-${index}-${person.username || person.url || index}`,
-            src: person.avatar_url || `https://images.unsplash.com/photo-${1507003211 + index}?w=400&h=600&fit=crop`,
-            title: person.name || person.username || "GitHub User",
-            subtitle: person.bio || person.reason || `${person.username} on GitHub`,
-            url: person.url || person.html_url || (person.username ? `https://github.com/${person.username}` : null),
-            score: person.score || null, // Include the match score
-            pitch: person.pitch || null // Include the pitch if available
+            id: `linkedin-${index}-${person.url || person.urn_id || index}`,
+            src: person.image_url || person.profile_picture_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.title || 'User')}&background=6366f1&color=fff&size=400`,
+            title: person.title || person.name || person.full_name || "LinkedIn User",
+            subtitle: person.subtitle || person.headline || person.current_position || "Professional",
+            url: person.url || null,
+            score: null, // LinkedIn doesn't have scores
+            pitch: null,
+            source: 'linkedin'
           };
         }
         
         // Fallback for any other format
         return {
-          id: `person-${index}-${person.url || person.username || index}`,
-          src: person.image_url || person.avatar_url || person.profile_picture_url || `https://images.unsplash.com/photo-${1507003211 + index}?w=400&h=600&fit=crop`,
-          title: person.title || person.name || person.username || "Name",
+          id: `person-${index}-${person.url || index}`,
+          src: person.image_url || person.avatar_url || `https://ui-avatars.com/api/?name=User&background=random&size=400`,
+          title: person.title || person.name || person.username || "User",
           subtitle: person.subtitle || person.headline || person.bio || "Professional",
-          url: person.url || null
+          url: person.url || null,
+          score: person.score ?? null,
+          pitch: null,
+          source: 'unknown'
         };
       });
     }

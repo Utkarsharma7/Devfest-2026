@@ -195,19 +195,35 @@ def find_matches_for_me(my_username, my_location=None):
     if my_location:
         location_instruction = f"Filter results to: '{my_location}'."
 
-    # --- SIMPLIFIED PROMPT ---
+    # --- IMPROVED PROMPT WITH BETTER SCORING ---
     prompt = f"""
     I am GitHub user '{my_username}'. 
     
-    GOAL: Find the top 5 technical matches for me.
+    GOAL: Find the top 5 technical matches for networking/collaboration.
 
-    Step 1: Analyze my profile (`{my_username}`) to identify my core skills.
+    Step 1: Analyze my profile (`{my_username}`) to identify my core skills, languages, and interests.
     Step 2: Use `search_candidates` to find 5-7 REAL developers with matching skills. {location_instruction}
-    Step 3: Analyze their activity to ensure they are active.
+    Step 3: Analyze their activity to assess collaboration potential.
+
+    SCORING CRITERIA (calculate score 0-100 based on these factors):
+    - Tech Stack Overlap (0-35 pts): How many languages/frameworks match?
+    - Activity Level (0-25 pts): Recent commits in last 30 days? (25=very active, 15=moderate, 5=low)
+    - Project Relevance (0-25 pts): Do their repos align with my interests?
+    - Collaboration Signals (0-15 pts): Open to PRs? Active in issues? Good documentation?
+    
+    SCORE DISTRIBUTION GUIDELINES:
+    - 90-100: Perfect match - same tech stack, very active, similar project interests
+    - 75-89: Strong match - most skills overlap, good activity
+    - 60-74: Good match - some overlap, decent activity
+    - 45-59: Moderate match - few overlaps but potential
+    - Below 45: Weak match - limited overlap
+    
+    Be VARIED with scores! Don't give everyone 85. Use the full range based on actual analysis.
 
     CRITICAL RULES:
-    1. **NO FAKE DATA:** If `search_candidates` returns empty, stop. Do NOT invent names.
+    1. **NO FAKE DATA:** If `search_candidates` returns empty, stop. Output {{"candidates": []}}
     2. **JSON ONLY:** Output a single JSON object. No Markdown. No conversation.
+    3. **UNIQUE SCORES:** Each candidate should have a different, justified score.
     
     REQUIRED JSON FORMAT:
     {{
@@ -215,9 +231,10 @@ def find_matches_for_me(my_username, my_location=None):
         {{
           "rank": 1,
           "name": "Real Name (or Handle)",
-          "score": 85,
-          "reason": "Exact match for [Skill]. Active 2 days ago on [Repo].",
-          "pitch": "Hi [Name], I saw your work on [Repo] and noticed we both use [Skill]..."
+          "username": "actual_github_username",
+          "score": 92,
+          "reason": "Expert in Python & ML. 47 commits this month on tensorflow projects.",
+          "pitch": "Hi [Name], your work on [specific repo] caught my eye - especially [specific feature]. I'm working on something similar with [my project]. Would love to collaborate!"
         }}
       ]
     }}
