@@ -14,6 +14,17 @@ export const Card = React.memo(({
     }
   };
 
+  // Get first 3 words of subtitle
+  const getShortSubtitle = (text) => {
+    if (!text) return "";
+    const words = text.split(/\s+/);
+    if (words.length <= 3) return text;
+    return words.slice(0, 3).join(" ") + "...";
+  };
+
+  const isHovered = hovered === index;
+  const shortSubtitle = getShortSubtitle(card.subtitle);
+
   return (
   <div
     onMouseEnter={() => setHovered(index)}
@@ -37,34 +48,39 @@ export const Card = React.memo(({
         minHeight: '100%'
       }}
       onError={(e) => {
-        // Fallback to placeholder if image fails to load
-        e.target.src = `https://images.unsplash.com/photo-${1507003211 + index}?w=400&h=600&fit=crop`;
+        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(card.title || 'User')}&background=random&size=400`;
       }}
     />
     <div
       className={cn(
-        "absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-end py-6 px-4 transition-all duration-300",
-        hovered === index ? "from-black/90" : "from-black/80"
+        "absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-end py-4 px-4 transition-all duration-300",
+        isHovered ? "from-black/95 via-black/70" : "from-black/80"
       )}>
       {/* Score Badge - Top Right */}
       {card.score !== null && card.score !== undefined && (
         <div className="absolute top-3 right-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs md:text-sm font-bold px-2 py-1 rounded-full shadow-lg">
-          {card.score}% Match
+          {card.score}%
         </div>
       )}
       <div className="w-full">
-        <div
-          className="text-xl md:text-2xl font-semibold text-white mb-1">
+        {/* Name - Always visible */}
+        <div className="text-lg md:text-xl font-semibold text-white mb-1 truncate">
           {card.title}
         </div>
+        
+        {/* Subtitle - Short version normally, full on hover */}
         {card.subtitle && (
-          <div className="text-sm md:text-base text-neutral-300">
-            {card.subtitle}
+          <div className={cn(
+            "text-sm text-neutral-300 transition-all duration-300",
+            isHovered ? "line-clamp-none" : "truncate"
+          )}>
+            {isHovered ? card.subtitle : shortSubtitle}
           </div>
         )}
-        {/* Pitch text on hover */}
-        {card.pitch && hovered === index && (
-          <div className="text-xs md:text-sm text-purple-300 mt-2 italic line-clamp-2">
+        
+        {/* Pitch text - Only on hover */}
+        {card.pitch && isHovered && (
+          <div className="text-xs text-purple-300 mt-2 italic line-clamp-3 animate-fadeIn">
             "{card.pitch}"
           </div>
         )}
