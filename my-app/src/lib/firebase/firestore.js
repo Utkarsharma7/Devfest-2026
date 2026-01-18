@@ -54,7 +54,20 @@ export const saveUserAnswers = async (userId, answers) => {
     const userRef = doc(db, "user", userId);
     
     // Filter out empty answers and create the Questions array
-    const questionsArray = answers.filter(answer => answer.trim() !== "");
+    // Handle different types: strings, arrays (join them), null/undefined
+    const questionsArray = answers
+      .map(answer => {
+        // Convert arrays to strings (e.g., skills array)
+        if (Array.isArray(answer)) {
+          return answer.join(', ');
+        }
+        // Convert to string if not already
+        if (answer == null) {
+          return '';
+        }
+        return String(answer);
+      })
+      .filter(answer => answer.trim() !== "");
     
     await updateDoc(userRef, {
       Questions: questionsArray,
