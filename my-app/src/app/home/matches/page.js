@@ -160,7 +160,7 @@ export default function MatchesPage() {
             title: person.title || person.name || person.full_name || "LinkedIn User",
             subtitle: person.subtitle || person.headline || person.current_position || "Professional",
             url: person.url || null,
-            score: null, // LinkedIn doesn't have scores
+            score: person.score ?? null, // Include random score from LinkedIn data
             pitch: null,
             source: 'linkedin'
           };
@@ -254,22 +254,36 @@ export default function MatchesPage() {
           {/* Status Messages */}
           {dataType === 'people' && cards.length > 0 && (
             <div className="mb-6 space-y-2">
-              <p className="text-green-400 text-center text-lg font-semibold">
-                ✅ GitHub Results Fetched ({cards.filter(c => c.id && c.id.startsWith('github')).length} profiles)
-              </p>
-              {linkedinLoading && !linkedinCompleted && (
-                <p className="text-yellow-400 text-center text-base animate-pulse">
-                  ⏳ Fetching LinkedIn Results...
+              {/* GitHub Status */}
+              {cards.filter(c => c.source === 'github').length > 0 && (
+                <p className="text-green-400 text-center text-lg font-semibold">
+                  ✅ GitHub ({cards.filter(c => c.source === 'github').length} profiles)
                 </p>
               )}
-              {linkedinCompleted && (
-                <p className={linkedinCount > 0 ? "text-green-400 text-center text-base" : "text-yellow-400 text-center text-base"}>
-                  {linkedinCount > 0 
-                    ? `✅ LinkedIn Results Fetched (${linkedinCount} profiles)`
-                    : "⚠️ LinkedIn Results: No matches found"
-                  }
-                </p>
-              )}
+              {/* LinkedIn Status - Show loading OR results based on actual card count */}
+              {(() => {
+                const linkedinCards = cards.filter(c => c.source === 'linkedin');
+                if (linkedinCards.length > 0) {
+                  return (
+                    <p className="text-green-400 text-center text-base">
+                      ✅ LinkedIn ({linkedinCards.length} profiles)
+                    </p>
+                  );
+                } else if (linkedinLoading && !linkedinCompleted) {
+                  return (
+                    <p className="text-yellow-400 text-center text-base animate-pulse">
+                      ⏳ Fetching LinkedIn Results...
+                    </p>
+                  );
+                } else if (linkedinCompleted) {
+                  return (
+                    <p className="text-yellow-400 text-center text-base">
+                      ⚠️ LinkedIn: No matches found
+                    </p>
+                  );
+                }
+                return null;
+              })()}
             </div>
           )}
           

@@ -509,6 +509,7 @@ export default function Dashboard() {
               const linkedinWithSource = linkedinPeople.map((p) => ({
                 ...p,
                 source: "linkedin",
+                score: Math.floor(Math.random() * 41) + 60, // Random score 60-100
               }));
 
               const finalPeople = [

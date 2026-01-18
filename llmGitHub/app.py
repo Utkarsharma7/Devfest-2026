@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
+import random
 
 # Just import the orchestrator function!
 from main_matcher import find_profiles_for_me
@@ -61,13 +62,21 @@ def get_matches(username: str):
         matches = result.get("matches", [])
         transformed_matches = []
         for idx, match in enumerate(matches, start=1):
+            # Add random ±10 variation to score
+            base_score = match.get("score", 70)
+            if isinstance(base_score, (int, float)):
+                variation = random.randint(-10, 10)
+                adjusted_score = max(0, min(100, int(base_score) + variation))
+            else:
+                adjusted_score = random.randint(60, 90)
+            
             transformed_matches.append({
                 "rank": idx,
                 "username": match.get("username", ""),
                 "name": match.get("name", match.get("username", "")),
                 "url": match.get("url", ""),
                 "avatar_url": match.get("avatar_url"),
-                "score": match.get("score", 0),
+                "score": adjusted_score,
                 "reason": match.get("reason", ""),
                 "pitch": match.get("pitch", "")
             })
