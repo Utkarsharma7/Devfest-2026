@@ -1,0 +1,38 @@
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.eggs
+*.egg-info
+.pytest_cache
+.mypy_cache
+venv
+.venv
+
+# IDE
+.idea
+.vscode
+
+# Git
+.git
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+test_*.py
+
+# Shell scripts
+*.sh
+
+# Node (if any)
+node_modules
+
+# Data files (mount as volumes)
+*.json
+!package.json

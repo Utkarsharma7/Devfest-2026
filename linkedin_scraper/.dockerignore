@@ -1,0 +1,36 @@
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.eggs
+*.egg-info
+.pytest_cache
+.mypy_cache
+venv
+.venv
+
+# IDE
+.idea
+.vscode
+
+# Tests
+tests
+
+# Git
+.git
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Samples (not needed in production)
+samples
+
+# Debug files
+*.html
+analyze_debug.py
+inspect_obfuscation.py

@@ -1,0 +1,157 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # OLLAMA - Local LLM Server
+  # ============================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: devfest-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ============================================
+  # FRONTEND - Next.js Application
+  # ============================================
+  frontend:
+    build:
+      context: ./my-app
+      dockerfile: Dockerfile
+    container_name: devfest-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_LINKEDIN_API=http://linkedin-scraper:8000
+      - NEXT_PUBLIC_LLM_API=http://llm-scripts:8001
+      - NEXT_PUBLIC_GITHUB_API=http://github-matcher:8002
+      - NEXT_PUBLIC_OCR_API=http://ocr-server:8003
+    depends_on:
+      - linkedin-scraper
+      - llm-scripts
+      - github-matcher
+      - ocr-server
+    restart: unless-stopped
+
+  # ============================================
+  # LINKEDIN SCRAPER - Port 8000
+  # ============================================
+  linkedin-scraper:
+    build:
+      context: ./linkedin_scraper
+      dockerfile: Dockerfile
+    container_name: devfest-linkedin-scraper
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./linkedin_scraper/linkedin_session.json:/app/linkedin_session.json:ro
+      - linkedin_browser_data:/app/browser_data
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # LLM SCRIPTS - Port 8001
+  # ============================================
+  llm-scripts:
+    build:
+      context: ./llm-scripts
+      dockerfile: Dockerfile
+    container_name: devfest-llm-scripts
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OLLAMA_HOST=http://ollama:11434
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # OCR SERVER - Port 8003
+  # ============================================
+  ocr-server:
+    build:
+      context: ./llm-scripts
+      dockerfile: Dockerfile.ocr
+    container_name: devfest-ocr-server
+    ports:
+      - "8003:8003"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ocr_models:/root/.EasyOCR
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # GITHUB MATCHER - Port 8002
+  # ============================================
+  github-matcher:
+    build:
+      context: ./llmGitHub
+      dockerfile: Dockerfile
+    container_name: devfest-github-matcher
+    ports:
+      - "8002:8002"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# ============================================
+# VOLUMES
+# ============================================
+volumes:
+  ollama_data:
+    driver: local
+  linkedin_browser_data:
+    driver: local
+  ocr_models:
+    driver: local
+
+# ============================================
+# NETWORKS
+# ============================================
+networks:
+  default:
+    name: devfest-network
+    driver: bridge

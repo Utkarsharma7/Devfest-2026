@@ -1,0 +1,74 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.eggs
+*.egg-info
+.pytest_cache
+.mypy_cache
+venv
+.venv
+env
+
+# Node
+node_modules
+.npm
+.yarn
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+.cursor
+
+# Next.js
+.next
+out
+
+# Build artifacts
+dist
+build
+*.log
+
+# Environment files (handle separately)
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed in container)
+*.md
+!README.md
+
+# Tests
+tests
+test
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# LinkedIn session (mount as volume instead)
+# linkedin_session.json
+
+# Shell scripts (Windows specific)
+*.bat
+*.sh
+*.ps1

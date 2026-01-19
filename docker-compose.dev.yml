@@ -1,0 +1,46 @@
+# ============================================
+# Devfest-2026 Docker Compose - Development Mode
+# ============================================
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# This override enables hot-reload and volume mounts for development
+
+version: '3.8'
+
+services:
+  # Frontend with hot reload
+  frontend:
+    build:
+      context: ./my-app
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./my-app/src:/app/src:ro
+      - ./my-app/public:/app/public:ro
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+
+  # LinkedIn Scraper with code mounting
+  linkedin-scraper:
+    volumes:
+      - ./linkedin_scraper:/app:ro
+      - ./linkedin_scraper/linkedin_session.json:/app/linkedin_session.json:rw
+    command: uvicorn server:app --host 0.0.0.0 --port 8000 --reload
+
+  # LLM Scripts with code mounting
+  llm-scripts:
+    volumes:
+      - ./llm-scripts:/app:ro
+    command: uvicorn app:app --host 0.0.0.0 --port 8001 --reload
+
+  # OCR Server with code mounting
+  ocr-server:
+    volumes:
+      - ./llm-scripts:/app:ro
+    command: uvicorn app2:app --host 0.0.0.0 --port 8003 --reload
+
+  # GitHub Matcher with code mounting
+  github-matcher:
+    volumes:
+      - ./llmGitHub:/app:ro
+    command: uvicorn app:app --host 0.0.0.0 --port 8002 --reload
