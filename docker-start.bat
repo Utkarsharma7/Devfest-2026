@@ -16,16 +16,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Check for .env file
-if not exist .env (
-    echo Warning: No .env file found. Creating from .env.example...
-    if exist .env.example (
-        copy .env.example .env
-        echo Please edit .env file with your API keys before continuing.
-        pause
-        exit /b 1
-    )
-)
+REM API keys are hardcoded in the project - no .env needed!
 
 REM Parse command line arguments
 set ACTION=%1

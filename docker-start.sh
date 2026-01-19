@@ -16,15 +16,7 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
-# Check for .env file
-if [ ! -f .env ]; then
-    echo "⚠️  No .env file found. Creating from .env.example..."
-    if [ -f .env.example ]; then
-        cp .env.example .env
-        echo "📝 Please edit .env file with your API keys before continuing."
-        exit 1
-    fi
-fi
+# API keys are hardcoded in the project - no .env needed!
 
 # Parse command line arguments
 ACTION=${1:-up}
